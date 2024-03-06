@@ -107,6 +107,7 @@ func ParseToken(tokenString string) (*Token, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Token{}, func(token *jwt.Token) (interface{}, error) {
 		return tokenKey, nil
 	})
+	//todo:错误处理
 	if err != nil {
 		return nil, err
 	}

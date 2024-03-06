@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 type UserController struct{}
@@ -66,7 +67,6 @@ func (u UserController) GetRegisterCode(c *gin.Context) {
 	subject := "欢迎注册医学低代码平台"
 	body := fmt.Sprintf("欢迎注册医学低代码平台，您的验证码为：%s，验证码有效期为10分钟，如非您个人操作，请忽略", code)
 	model.SendEmail(toEmail, subject, body)
-	fmt.Println("123123123")
 	c.JSON(http.StatusOK, gin.H{})
 }
 
@@ -209,13 +209,17 @@ func (u UserController) ResetPassword(c *gin.Context) {
 
 func (u UserController) GetUserInfo(c *gin.Context) {
 	tokenString := c.Request.Header.Get("token")
+	if tokenString == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{})
+		return
+	}
 	token, err := model.ParseToken(tokenString)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"userId":    token.UserId,
+		"userId":    strconv.Itoa(token.UserId),
 		"userName":  token.UserName,
 		"userEmail": token.UserEmail,
 	})
