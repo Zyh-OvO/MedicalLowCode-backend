@@ -15,17 +15,17 @@ type newProjectJson struct {
 }
 
 type deleteProjectJson struct {
-	ProjectId string `json:"projectId"`
+	ProjectId string `json:"projectId" binding:"required"`
 }
 
 type editProjectJson struct {
-	ProjectId          string `json:"projectId"`
-	ProjectName        string `json:"projectName"`
-	ProjectDescription string `json:"projectDescription"`
+	ProjectId          string  `json:"projectId" binding:"required"`
+	ProjectName        *string `json:"projectName"`
+	ProjectDescription *string `json:"projectDescription"`
 }
 
 type getProjectInfoJson struct {
-	ProjectId string `json:"projectId"`
+	ProjectId string `json:"projectId" binding:"required"`
 }
 
 func (p ProjectManageController) NewProject(c *gin.Context) {
@@ -53,8 +53,8 @@ func (p ProjectManageController) DeleteProject(c *gin.Context) {
 		return
 	}
 	projectId, _ := strconv.Atoi(json.ProjectId)
-	if !model.CheckProjectPermission(token.UserId, projectId) {
-		c.JSON(http.StatusNotAcceptable, gin.H{"error": "无权限"})
+	if model.QueryProject(token.UserId, projectId) == nil {
+		c.JSON(http.StatusNotAcceptable, gin.H{"error": "项目不存在"})
 		return
 	}
 	model.DeleteProject(token.UserId, projectId)
@@ -62,13 +62,75 @@ func (p ProjectManageController) DeleteProject(c *gin.Context) {
 }
 
 func (p ProjectManageController) EditProject(c *gin.Context) {
-
+	token := c.MustGet("token").(*model.Token)
+	var json editProjectJson
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	projectId, _ := strconv.Atoi(json.ProjectId)
+	project := model.QueryProject(token.UserId, projectId)
+	if project == nil {
+		c.JSON(http.StatusNotAcceptable, gin.H{"error": "项目不存在"})
+		return
+	}
+	if json.ProjectName == nil && json.ProjectDescription == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"projectId":          strconv.Itoa(project.ProjectId),
+			"projectName":        project.ProjectName,
+			"projectDescription": project.ProjectDescription,
+			"createdAt":          project.CreatedAt.Unix(),
+			"updatedAt":          project.UpdatedAt.Unix(),
+		})
+	} else {
+		editedProject := model.EditProject(token.UserId, projectId, json.ProjectName, json.ProjectDescription)
+		c.JSON(http.StatusOK, gin.H{
+			"projectId":          strconv.Itoa(editedProject.ProjectId),
+			"projectName":        editedProject.ProjectName,
+			"projectDescription": editedProject.ProjectDescription,
+			"createdAt":          editedProject.CreatedAt.Unix(),
+			"updatedAt":          editedProject.UpdatedAt.Unix(),
+		})
+	}
 }
 
 func (p ProjectManageController) GetProjectInfo(c *gin.Context) {
-
+	token := c.MustGet("token").(*model.Token)
+	var json getProjectInfoJson
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	projectId, _ := strconv.Atoi(json.ProjectId)
+	project := model.QueryProject(token.UserId, projectId)
+	if project == nil {
+		c.JSON(http.StatusNotAcceptable, gin.H{"error": "项目不存在"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"projectId":          strconv.Itoa(project.ProjectId),
+		"projectName":        project.ProjectName,
+		"projectDescription": project.ProjectDescription,
+		"createdAt":          project.CreatedAt.Unix(),
+		"updatedAt":          project.UpdatedAt.Unix(),
+	})
 }
 
 func (p ProjectManageController) GetProjectList(c *gin.Context) {
-
+	token := c.MustGet("token").(*model.Token)
+	projectList := model.QueryProjectList(token.UserId)
+	var projectInfoList []gin.H
+	for _, project := range projectList {
+		projectInfoList = append(projectInfoList, gin.H{
+			"projectId":          strconv.Itoa(project.ProjectId),
+			"projectName":        project.ProjectName,
+			"projectDescription": project.ProjectDescription,
+			"createdAt":          project.CreatedAt.Unix(),
+			"updatedAt":          project.UpdatedAt.Unix(),
+		})
+	}
+	response := gin.H{
+		"projectList": projectInfoList,
+	}
+	c.JSON(http.StatusOK, response)
 }

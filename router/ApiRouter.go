@@ -64,7 +64,6 @@ func canvasManageRouterInit(router *gin.RouterGroup) {
 func moduleManageRouterInit(router *gin.RouterGroup) {
 	moduleManageRouter := router.Group("/moduleManage")
 	moduleManageRouter.Use(CheckToken)
-	moduleManageRouter.POST("/getPublicModules", api.ModuleManageController{}.GetPublicModules)
 	moduleManageRouter.POST("/getPersonalModules", api.ModuleManageController{}.GetPersonalModules)
 	moduleManageRouter.POST("/addPersonalModule", api.ModuleManageController{}.AddPersonalModule)
 	moduleManageRouter.POST("/deletePersonalModule", api.ModuleManageController{}.DeletePersonalModule)

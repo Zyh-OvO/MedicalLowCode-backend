@@ -11,29 +11,29 @@ import (
 type UserController struct{}
 
 type getRegisterCodeJson struct {
-	UserEmail string `json:"userEmail"`
+	UserEmail string `json:"userEmail" binding:"required"`
 }
 
 type registerJson struct {
-	RegisterCode string `json:"registerCode"`
-	UserEmail    string `json:"userEmail"`
-	UserName     string `json:"userName"`
-	UserPassword string `json:"userPassword"`
+	RegisterCode string `json:"registerCode" binding:"required"`
+	UserEmail    string `json:"userEmail" binding:"required"`
+	UserName     string `json:"userName" binding:"required"`
+	UserPassword string `json:"userPassword" binding:"required"`
 }
 
 type loginJson struct {
-	UserEmail    string `json:"userEmail"`
-	UserPassword string `json:"userPassword"`
+	UserEmail    string `json:"userEmail" binding:"required"`
+	UserPassword string `json:"userPassword" binding:"required"`
 }
 
 type getResetCodeJson struct {
-	UserEmail string `json:"userEmail"`
+	UserEmail string `json:"userEmail" binding:"required"`
 }
 
 type resetPassword struct {
-	NewPassword string `json:"newPassword"`
-	ResetCode   string `json:"resetCode"`
-	UserEmail   string `json:"userEmail"`
+	NewPassword string `json:"newPassword" binding:"required"`
+	ResetCode   string `json:"resetCode" binding:"required"`
+	UserEmail   string `json:"userEmail" binding:"required"`
 }
 
 func (u UserController) GetRegisterCode(c *gin.Context) {
