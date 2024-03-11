@@ -5,34 +5,35 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 type UserController struct{}
 
 type getRegisterCodeJson struct {
-	UserEmail string `json:"userEmail"`
+	UserEmail string `json:"userEmail" binding:"required"`
 }
 
 type registerJson struct {
-	RegisterCode string `json:"registerCode"`
-	UserEmail    string `json:"userEmail"`
-	UserName     string `json:"userName"`
-	UserPassword string `json:"userPassword"`
+	RegisterCode string `json:"registerCode" binding:"required"`
+	UserEmail    string `json:"userEmail" binding:"required"`
+	UserName     string `json:"userName" binding:"required"`
+	UserPassword string `json:"userPassword" binding:"required"`
 }
 
 type loginJson struct {
-	UserEmail    string `json:"userEmail"`
-	UserPassword string `json:"userPassword"`
+	UserEmail    string `json:"userEmail" binding:"required"`
+	UserPassword string `json:"userPassword" binding:"required"`
 }
 
 type getResetCodeJson struct {
-	UserEmail string `json:"userEmail"`
+	UserEmail string `json:"userEmail" binding:"required"`
 }
 
 type resetPassword struct {
-	NewPassword string `json:"newPassword"`
-	ResetCode   string `json:"resetCode"`
-	UserEmail   string `json:"userEmail"`
+	NewPassword string `json:"newPassword" binding:"required"`
+	ResetCode   string `json:"resetCode" binding:"required"`
+	UserEmail   string `json:"userEmail" binding:"required"`
 }
 
 func (u UserController) GetRegisterCode(c *gin.Context) {
@@ -66,7 +67,6 @@ func (u UserController) GetRegisterCode(c *gin.Context) {
 	subject := "欢迎注册医学低代码平台"
 	body := fmt.Sprintf("欢迎注册医学低代码平台，您的验证码为：%s，验证码有效期为10分钟，如非您个人操作，请忽略", code)
 	model.SendEmail(toEmail, subject, body)
-	fmt.Println("123123123")
 	c.JSON(http.StatusOK, gin.H{})
 }
 
@@ -211,13 +211,17 @@ func (u UserController) ResetPassword(c *gin.Context) {
 
 func (u UserController) GetUserInfo(c *gin.Context) {
 	tokenString := c.Request.Header.Get("token")
+	if tokenString == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{})
+		return
+	}
 	token, err := model.ParseToken(tokenString)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"userId":    token.UserId,
+		"userId":    strconv.Itoa(token.UserId),
 		"userName":  token.UserName,
 		"userEmail": token.UserEmail,
 	})
