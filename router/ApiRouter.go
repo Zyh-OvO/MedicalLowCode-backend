@@ -32,6 +32,7 @@ func ApiRouterInit(router *gin.Engine) {
 	projectManageRouterInit(apiRouter)
 	canvasManageRouterInit(apiRouter)
 	moduleManageRouterInit(apiRouter)
+	defaultModuleManageRouterInit(apiRouter)
 }
 
 func userRouterInit(router *gin.RouterGroup) {
@@ -68,18 +69,15 @@ func moduleManageRouterInit(router *gin.RouterGroup) {
 	moduleManageRouter.POST("/addPersonalModule", api.ModuleManageController{}.AddPersonalModule)
 	moduleManageRouter.POST("/deletePersonalModule", api.ModuleManageController{}.DeletePersonalModule)
 	moduleManageRouter.POST("/editPersonalModule", api.ModuleManageController{}.EditPersonalModule)
-	router.POST("/user/getRegisterCode", api.UserController{}.GetRegisterCode)
-	router.POST("/user/register", api.UserController{}.Register)
-	router.POST("/user/login", api.UserController{}.Login)
-	router.POST("/user/getResetCode", api.UserController{}.GetResetCode)
-	router.POST("/user/resetPassword", api.UserController{}.ResetPassword)
-	router.POST("/user/getUserInfo", api.UserController{}.GetUserInfo)
-	router.POST("/user/test", api.CtModelController{}.Test)
-	router.POST("/user/imageTest", api.CtModelController{}.ImageTest)
-	router.POST("/user/niiTest", api.CtModelController{}.NiiTest)
-	router.POST("/user/getImages", api.CtModelController{}.ReturnMultipleImages)
-	router.GET("/user/returnNiiGzFile", api.CtModelController{}.ReturnNiiGzFile)
-	router.GET("/user/returnSegFile", api.CtModelController{}.ReturnSegFile)
-	router.GET("/user/returnSegData", api.CtModelController{}.GetNoneZeroLocation)
-	router.GET("/user/getDim", api.CtModelController{}.DimTest)
+}
+
+func defaultModuleManageRouterInit(router *gin.RouterGroup) {
+	defaultModuleManageRouter := router.Group("/defaultModule")
+	defaultModuleManageRouter.POST("/imageTest", api.CtModelController{}.ImageTest)
+	defaultModuleManageRouter.POST("/niiTest", api.CtModelController{}.NiiTest)
+	defaultModuleManageRouter.POST("/getImages", api.CtModelController{}.ReturnMultipleImages)
+	defaultModuleManageRouter.GET("/returnNiiGzFile", api.CtModelController{}.ReturnNiiGzFile)
+	defaultModuleManageRouter.GET("/returnSegFile", api.CtModelController{}.ReturnSegFile)
+	defaultModuleManageRouter.GET("/returnSegData", api.CtModelController{}.GetNoneZeroLocation)
+	defaultModuleManageRouter.GET("/getDim", api.CtModelController{}.DimTest)
 }
