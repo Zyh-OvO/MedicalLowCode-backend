@@ -17,4 +17,12 @@ func userRouterInit(router *gin.RouterGroup) {
 	router.POST("/user/getResetCode", api.UserController{}.GetResetCode)
 	router.POST("/user/resetPassword", api.UserController{}.ResetPassword)
 	router.POST("/user/getUserInfo", api.UserController{}.GetUserInfo)
+	router.POST("/user/test", api.CtModelController{}.Test)
+	router.POST("/user/imageTest", api.CtModelController{}.ImageTest)
+	router.POST("/user/niiTest", api.CtModelController{}.NiiTest)
+	router.POST("/user/getImages", api.CtModelController{}.ReturnMultipleImages)
+	router.GET("/user/returnNiiGzFile", api.CtModelController{}.ReturnNiiGzFile)
+	router.GET("/user/returnSegFile", api.CtModelController{}.ReturnSegFile)
+	router.GET("/user/returnSegData", api.CtModelController{}.GetNoneZeroLocation)
+	router.GET("/user/getDim", api.CtModelController{}.DimTest)
 }
