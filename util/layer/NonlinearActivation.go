@@ -1,9 +1,5 @@
 package layer
 
-import (
-	"MedicalLowCode-backend/util/exportCode"
-)
-
 type ELU struct {
 	Alpha   *float64 `default:"1.0"`
 	Inplace *bool    `default:"false"`
@@ -233,7 +229,7 @@ func (l *LogSoftmax) IsLayer() {
 	return
 }
 
-func GenerateNonlinearActivation(node *exportCode.CNode) {
+func GenerateNonlinearActivation(node *CNode) {
 	switch node.Type {
 	case "ELU":
 		node.SetLayer(GenerateLayer(&ELU{}, node.Data.(map[string]any)))

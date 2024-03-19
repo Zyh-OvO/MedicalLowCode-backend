@@ -1,9 +1,5 @@
 package layer
 
-import (
-	"MedicalLowCode-backend/util/exportCode"
-)
-
 type Conv1d struct {
 	InChannels  int
 	OutChannels int
@@ -52,7 +48,7 @@ func (c *Conv3d) IsLayer() {
 	return
 }
 
-func GenerateConvLayer(node *exportCode.CNode) {
+func GenerateConvLayer(node *CNode) {
 	switch node.Type {
 	case "Conv1d":
 		node.SetLayer(GenerateLayer(&Conv1d{}, node.Data.(map[string]any)))

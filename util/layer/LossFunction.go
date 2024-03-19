@@ -1,9 +1,5 @@
 package layer
 
-import (
-	"MedicalLowCode-backend/util/exportCode"
-)
-
 type L1Loss struct {
 	SizeAverage *bool   `default:"true"`
 	Reduce      *bool   `default:"true"`
@@ -48,7 +44,7 @@ func (b *BCELoss) IsLayer() {
 	return
 }
 
-func GenerateLossFunction(node *exportCode.CNode) {
+func GenerateLossFunction(node *CNode) {
 	switch node.Type {
 	case "L1Loss":
 		node.SetLayer(GenerateLayer(&L1Loss{}, node.Data.(map[string]any)))

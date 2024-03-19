@@ -1,9 +1,5 @@
 package layer
 
-import (
-	"MedicalLowCode-backend/util/exportCode"
-)
-
 type Linear struct {
 	InFeatures  int
 	OutFeatures int
@@ -34,7 +30,7 @@ func (l *LazyLinear) IsLayer() {
 	return
 }
 
-func GenerateLinearLayer(node *exportCode.CNode) {
+func GenerateLinearLayer(node *CNode) {
 	switch node.Type {
 	case "Linear":
 		node.SetLayer(GenerateLayer(&Linear{}, node.Data.(map[string]any)))

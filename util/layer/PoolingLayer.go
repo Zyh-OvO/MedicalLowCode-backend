@@ -1,9 +1,5 @@
 package layer
 
-import (
-	"MedicalLowCode-backend/util/exportCode"
-)
-
 type MaxPool1d struct {
 	KernelSize    int
 	Stride        int
@@ -81,7 +77,7 @@ func (a *AvgPool3d) IsLayer() {
 	return
 }
 
-func GeneratePoolingLayer(node *exportCode.CNode) {
+func GeneratePoolingLayer(node *CNode) {
 	switch node.Type {
 	case "MaxPool1d":
 		node.SetLayer(GenerateLayer(&MaxPool1d{}, node.Data.(map[string]any)))

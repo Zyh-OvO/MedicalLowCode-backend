@@ -1,7 +1,6 @@
-package exportCode
+package layer
 
 import (
-	"MedicalLowCode-backend/util/layer"
 	"encoding/json"
 	"gopkg.in/gyuho/goraph.v2"
 )
@@ -15,7 +14,7 @@ type CNode struct {
 	Id    string `json:"id"`
 	Type  string `json:"type"`
 	Data  any    `json:"data"` //todo
-	Layer layer.Layer
+	Layer Layer
 }
 
 type CEdge struct {
@@ -31,7 +30,7 @@ func (node *CNode) String() string {
 	return node.Id
 }
 
-func (node *CNode) SetLayer(l layer.Layer) {
+func (node *CNode) SetLayer(l Layer) {
 	node.Layer = l
 }
 

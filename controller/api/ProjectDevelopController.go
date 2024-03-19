@@ -3,7 +3,7 @@ package api
 import (
 	"MedicalLowCode-backend/model"
 	"MedicalLowCode-backend/util"
-	"MedicalLowCode-backend/util/exportCode"
+	"MedicalLowCode-backend/util/layer"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -36,7 +36,7 @@ func (p ProjectDevelopController) ExportCode(c *gin.Context) {
 		c.JSON(http.StatusNotAcceptable, gin.H{"error": "项目不存在"})
 		return
 	}
-	code := exportCode.ExportCode(canvas.CanvasContent)
+	code := layer.ExportCode(canvas.CanvasContent)
 	c.JSON(http.StatusOK, gin.H{
 		"code": code,
 	})
