@@ -2,6 +2,7 @@ package api
 
 import (
 	"MedicalLowCode-backend/model"
+	"MedicalLowCode-backend/util"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -44,7 +45,7 @@ func (u UserController) GetRegisterCode(c *gin.Context) {
 	}
 
 	//校验邮箱
-	if !model.CheckEmail(json.UserEmail) {
+	if !util.CheckEmail(json.UserEmail) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "邮箱格式不正确"})
 		return
 	}
@@ -57,7 +58,7 @@ func (u UserController) GetRegisterCode(c *gin.Context) {
 	}
 
 	//生成6位验证码
-	code := model.GenRandomString(6)
+	code := util.GenRandomString(6)
 
 	//操作数据库
 	model.AddRegisterCode(json.UserEmail, code)
@@ -66,7 +67,7 @@ func (u UserController) GetRegisterCode(c *gin.Context) {
 	toEmail := json.UserEmail
 	subject := "欢迎注册医学低代码平台"
 	body := fmt.Sprintf("欢迎注册医学低代码平台，您的验证码为：%s，验证码有效期为10分钟，如非您个人操作，请忽略", code)
-	model.SendEmail(toEmail, subject, body)
+	util.SendEmail(toEmail, subject, body)
 	c.JSON(http.StatusOK, gin.H{})
 }
 
@@ -78,7 +79,7 @@ func (u UserController) Register(c *gin.Context) {
 	}
 
 	//校验邮箱
-	if !model.CheckEmail(json.UserEmail) {
+	if !util.CheckEmail(json.UserEmail) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "邮箱格式不正确"})
 		return
 	}
@@ -89,11 +90,11 @@ func (u UserController) Register(c *gin.Context) {
 		return
 	}
 	//校验名字和密码
-	if !model.CheckUserName(json.UserName) {
+	if !util.CheckUserName(json.UserName) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "用户名格式不正确"})
 		return
 	}
-	if !model.CheckPassword(json.UserPassword) {
+	if !util.CheckPassword(json.UserPassword) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "密码格式不正确"})
 		return
 	}
@@ -116,7 +117,7 @@ func (u UserController) Login(c *gin.Context) {
 	}
 
 	//校验邮箱
-	if !model.CheckEmail(json.UserEmail) {
+	if !util.CheckEmail(json.UserEmail) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "邮箱格式不正确"})
 		return
 	}
@@ -127,11 +128,11 @@ func (u UserController) Login(c *gin.Context) {
 		return
 	}
 	//校验密码
-	if !model.CheckBcryptPassword(json.UserPassword, user.UserPassword) {
+	if !util.CheckBcryptPassword(json.UserPassword, user.UserPassword) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "密码错误"})
 		return
 	}
-	token, err := model.SignToken(user.UserId, user.UserName, user.UserEmail)
+	token, err := util.SignToken(user.UserId, user.UserName, user.UserEmail)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -149,7 +150,7 @@ func (u UserController) GetResetCode(c *gin.Context) {
 	}
 
 	//校验邮箱
-	if !model.CheckEmail(json.UserEmail) {
+	if !util.CheckEmail(json.UserEmail) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "邮箱格式不正确"})
 		return
 	}
@@ -162,7 +163,7 @@ func (u UserController) GetResetCode(c *gin.Context) {
 	}
 
 	//生成6位验证码
-	code := model.GenRandomString(6)
+	code := util.GenRandomString(6)
 
 	//操作数据库
 	model.AddResetCode(json.UserEmail, code)
@@ -171,7 +172,7 @@ func (u UserController) GetResetCode(c *gin.Context) {
 	toEmail := json.UserEmail
 	subject := "医学低代码平台密码重置"
 	body := fmt.Sprintf("您正在重置密码，验证码为：%s，验证码有效期为10分钟，如非您个人操作，请忽略", code)
-	model.SendEmail(toEmail, subject, body)
+	util.SendEmail(toEmail, subject, body)
 
 	c.JSON(http.StatusOK, gin.H{})
 }
@@ -184,7 +185,7 @@ func (u UserController) ResetPassword(c *gin.Context) {
 	}
 
 	//校验邮箱
-	if !model.CheckEmail(json.UserEmail) {
+	if !util.CheckEmail(json.UserEmail) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "邮箱格式不正确"})
 		return
 	}
@@ -195,7 +196,7 @@ func (u UserController) ResetPassword(c *gin.Context) {
 		return
 	}
 	//校验密码
-	if !model.CheckPassword(json.NewPassword) {
+	if !util.CheckPassword(json.NewPassword) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "密码格式不正确"})
 		return
 	}
@@ -215,7 +216,7 @@ func (u UserController) GetUserInfo(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{})
 		return
 	}
-	token, err := model.ParseToken(tokenString)
+	token, err := util.ParseToken(tokenString)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

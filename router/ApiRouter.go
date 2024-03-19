@@ -2,7 +2,7 @@ package router
 
 import (
 	"MedicalLowCode-backend/controller/api"
-	"MedicalLowCode-backend/model"
+	"MedicalLowCode-backend/util"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -13,7 +13,7 @@ func CheckToken(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{})
 		c.Abort()
 	} else {
-		token, err := model.ParseToken(token)
+		token, err := util.ParseToken(token)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": err.Error(),
@@ -32,6 +32,7 @@ func ApiRouterInit(router *gin.Engine) {
 	projectManageRouterInit(apiRouter)
 	canvasManageRouterInit(apiRouter)
 	moduleManageRouterInit(apiRouter)
+	projectDevelopRouterInit(apiRouter)
 	defaultModuleManageRouterInit(apiRouter)
 }
 
@@ -69,6 +70,14 @@ func moduleManageRouterInit(router *gin.RouterGroup) {
 	moduleManageRouter.POST("/addPersonalModule", api.ModuleManageController{}.AddPersonalModule)
 	moduleManageRouter.POST("/deletePersonalModule", api.ModuleManageController{}.DeletePersonalModule)
 	moduleManageRouter.POST("/editPersonalModule", api.ModuleManageController{}.EditPersonalModule)
+}
+
+func projectDevelopRouterInit(router *gin.RouterGroup) {
+	projectDevelopRouter := router.Group("/projectDevelop")
+	projectDevelopRouter.Use(CheckToken)
+	projectDevelopRouter.POST("/exportCode", api.ProjectDevelopController{}.ExportCode)
+	projectDevelopRouter.POST("/submitTrainingTask", api.ProjectDevelopController{}.SubmitTrainingTask)
+	projectDevelopRouter.POST("/submitReasoningTask", api.ProjectDevelopController{}.SubmitReasoningTask)
 }
 
 func defaultModuleManageRouterInit(router *gin.RouterGroup) {

@@ -14,7 +14,7 @@ type Project struct {
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 	DeletedAt          gorm.DeletedAt
-	CanvasList         []Canvas `gorm:"foreignKey:ProjectId;references:ProjectId"`
+	Canvas             Canvas `gorm:"foreignKey:ProjectId;references:ProjectId"`
 }
 
 func (p *Project) TableName() string {
@@ -62,9 +62,7 @@ func NewProject(userId int, projectName string, projectDescription string) Proje
 		UserId:             userId,
 		ProjectName:        projectName,
 		ProjectDescription: projectDescription,
-		CanvasList: []Canvas{
-			{CanvasName: "默认画布", CanvasContent: ""},
-		},
+		Canvas:             Canvas{CanvasName: "默认画布", CanvasContent: ""},
 	}
 	if err := DB.Create(&project).Error; err != nil {
 		panic(err)
@@ -102,7 +100,7 @@ func EditProject(userId int, projectId int, projectName *string, projectDescript
 }
 func QueryProject(userId int, projectId int) *Project {
 	project := Project{}
-	result := DB.Where("user_id = ? and project_id = ?", userId, projectId).First(&project)
+	result := DB.Preload("Canvas").Where("user_id = ? and project_id = ?", userId, projectId).First(&project)
 	if err := result.Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil
@@ -122,28 +120,26 @@ func QueryProjectList(userId int) []Project {
 	return projectList
 }
 
-func EditCanvas(projectId int, canvasContent string) *Canvas {
-	canvas := Canvas{}
+func EditCanvas(userId int, projectId int, canvasContent string) *Canvas {
+	canvas := QueryCanvas(userId, projectId)
+	if canvas == nil {
+		return nil
+	}
 	canvas.ProjectId = projectId
 	canvas.CanvasContent = canvasContent
-	result := DB.Where("project_id = ?", projectId).Select("canvas_content").Updates(&canvas)
+	result := DB.Where("project_id = ?", projectId).Select("canvas_content").Updates(canvas)
 	if err := result.Error; err != nil {
 		panic(err)
 	}
-	return QueryCanvas(projectId)
+	return canvas
 }
 
-func QueryCanvas(projectId int) *Canvas {
-	canvas := Canvas{}
-	result := DB.Where("project_id = ?", projectId).First(&canvas)
-	if err := result.Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil
-		} else {
-			panic(err)
-		}
+func QueryCanvas(userId int, projectId int) *Canvas {
+	project := QueryProject(userId, projectId)
+	if project == nil {
+		return nil
 	}
-	return &canvas
+	return &project.Canvas
 }
 
 func QueryPersonalModule(userId int, moduleId int) *Module {

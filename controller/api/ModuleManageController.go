@@ -2,6 +2,7 @@ package api
 
 import (
 	"MedicalLowCode-backend/model"
+	"MedicalLowCode-backend/util"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -25,7 +26,7 @@ type editPersonalModuleJson struct {
 }
 
 func (m ModuleManageController) GetPersonalModules(c *gin.Context) {
-	token := c.MustGet("token").(*model.Token)
+	token := c.MustGet("token").(*util.Token)
 	modules := model.QueryPersonalModules(token.UserId)
 	var moduleList []gin.H
 	for _, module := range modules {
@@ -44,7 +45,7 @@ func (m ModuleManageController) GetPersonalModules(c *gin.Context) {
 }
 
 func (m ModuleManageController) AddPersonalModule(c *gin.Context) {
-	token := c.MustGet("token").(*model.Token)
+	token := c.MustGet("token").(*util.Token)
 	var json addPersonalModuleJson
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -61,7 +62,7 @@ func (m ModuleManageController) AddPersonalModule(c *gin.Context) {
 }
 
 func (m ModuleManageController) DeletePersonalModule(c *gin.Context) {
-	token := c.MustGet("token").(*model.Token)
+	token := c.MustGet("token").(*util.Token)
 	var json deletePersonalModuleJson
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -77,7 +78,7 @@ func (m ModuleManageController) DeletePersonalModule(c *gin.Context) {
 }
 
 func (m ModuleManageController) EditPersonalModule(c *gin.Context) {
-	token := c.MustGet("token").(*model.Token)
+	token := c.MustGet("token").(*util.Token)
 	var json editPersonalModuleJson
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
