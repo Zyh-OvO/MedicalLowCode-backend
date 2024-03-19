@@ -116,6 +116,7 @@ func ParseToken(tokenString string) (*Token, error) {
 	return token.Claims.(*Token), nil
 }
 
+// SetDefault v 需要为一个结构体指针
 func SetDefault(v any) {
 	value := reflect.ValueOf(v).Elem()
 	typ := value.Type()
@@ -125,7 +126,6 @@ func SetDefault(v any) {
 		defaultValue := field.Tag.Get("default")
 		if defaultValue != "" {
 			fieldValue := value.Field(i)
-
 			switch field.Type.Kind() {
 			case reflect.Int:
 				defaultValueInt, _ := strconv.Atoi(defaultValue)
@@ -135,6 +135,10 @@ func SetDefault(v any) {
 			case reflect.Bool:
 				defaultValueBool, _ := strconv.ParseBool(defaultValue)
 				fieldValue.SetBool(defaultValueBool)
+			case reflect.Slice:
+				switch field.Type.Elem().Kind() {
+				case reflect.Int:
+				}
 			}
 		}
 	}
