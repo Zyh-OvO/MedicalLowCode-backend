@@ -33,6 +33,7 @@ func ApiRouterInit(router *gin.Engine) {
 	canvasManageRouterInit(apiRouter)
 	moduleManageRouterInit(apiRouter)
 	projectDevelopRouterInit(apiRouter)
+	defaultModuleManageRouterInit(apiRouter)
 }
 
 func userRouterInit(router *gin.RouterGroup) {
@@ -77,4 +78,15 @@ func projectDevelopRouterInit(router *gin.RouterGroup) {
 	projectDevelopRouter.POST("/exportCode", api.ProjectDevelopController{}.ExportCode)
 	projectDevelopRouter.POST("/submitTrainingTask", api.ProjectDevelopController{}.SubmitTrainingTask)
 	projectDevelopRouter.POST("/submitReasoningTask", api.ProjectDevelopController{}.SubmitReasoningTask)
+}
+
+func defaultModuleManageRouterInit(router *gin.RouterGroup) {
+	defaultModuleManageRouter := router.Group("/defaultModule")
+	defaultModuleManageRouter.POST("/imageTest", api.CtModelController{}.ImageTest)
+	defaultModuleManageRouter.POST("/niiTest", api.CtModelController{}.NiiTest)
+	defaultModuleManageRouter.POST("/getImages", api.CtModelController{}.ReturnMultipleImages)
+	defaultModuleManageRouter.GET("/returnNiiGzFile", api.CtModelController{}.ReturnNiiGzFile)
+	defaultModuleManageRouter.GET("/returnSegFile", api.CtModelController{}.ReturnSegFile)
+	defaultModuleManageRouter.GET("/returnSegData", api.CtModelController{}.GetNoneZeroLocation)
+	defaultModuleManageRouter.GET("/getDim", api.CtModelController{}.DimTest)
 }
