@@ -1,4 +1,4 @@
-package model
+package util
 
 import (
 	"github.com/dlclark/regexp2"
@@ -6,7 +6,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/gomail.v2"
 	"math/rand"
+	"reflect"
 	"regexp"
+	"strconv"
 	"time"
 )
 
@@ -112,4 +114,28 @@ func ParseToken(tokenString string) (*Token, error) {
 		return nil, err
 	}
 	return token.Claims.(*Token), nil
+}
+
+func SetDefault(v any) {
+	value := reflect.ValueOf(v).Elem()
+	typ := value.Type()
+
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		defaultValue := field.Tag.Get("default")
+		if defaultValue != "" {
+			fieldValue := value.Field(i)
+
+			switch field.Type.Kind() {
+			case reflect.Int:
+				defaultValueInt, _ := strconv.Atoi(defaultValue)
+				fieldValue.SetInt(int64(defaultValueInt))
+			case reflect.String:
+				fieldValue.SetString(defaultValue)
+			case reflect.Bool:
+				defaultValueBool, _ := strconv.ParseBool(defaultValue)
+				fieldValue.SetBool(defaultValueBool)
+			}
+		}
+	}
 }

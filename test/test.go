@@ -1,11 +1,28 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"golang.org/x/crypto/bcrypt"
 )
 
+type Person struct {
+	Age       []int  `json:"age"`
+	Name      string `json:"name"`
+	Niubility bool   `json:"niubility"`
+	An        any    `json:"an"`
+}
+
+func test(map[string]any) {
+	return
+}
+
 func main() {
-	hs, _ := bcrypt.GenerateFromPassword([]byte("aewqwd2323542sdv463sdgs45"), bcrypt.DefaultCost)
-	fmt.Println(string(hs))
+	b := []byte(`{"age":18,"name":"5lmh.com","marry":false,"an":"test"}`)
+	p := Person{
+		Name: "12312312313",
+		Age:  []int{1, 2, 3},
+		An:   1,
+	}
+	json.Unmarshal(b, &p)
+	fmt.Printf("%+v", p)
 }

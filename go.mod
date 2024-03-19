@@ -6,7 +6,7 @@ require (
 	github.com/dlclark/regexp2 v1.10.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang-jwt/jwt/v5 v5.2.0
-	golang.org/x/crypto v0.19.0
+	golang.org/x/crypto v0.21.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/mysql v1.5.4
 	gorm.io/gorm v1.25.7
@@ -37,11 +37,12 @@ require (
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	golang.org/x/arch v0.7.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
-	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
+	gopkg.in/gyuho/goraph.v2 v2.0.0-20160328020532-d460590d53a9 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

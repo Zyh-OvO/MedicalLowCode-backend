@@ -2,6 +2,7 @@ package api
 
 import (
 	"MedicalLowCode-backend/model"
+	"MedicalLowCode-backend/util"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -29,7 +30,7 @@ type getProjectInfoJson struct {
 }
 
 func (p ProjectManageController) NewProject(c *gin.Context) {
-	token := c.MustGet("token").(*model.Token)
+	token := c.MustGet("token").(*util.Token)
 	var json newProjectJson
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -46,7 +47,7 @@ func (p ProjectManageController) NewProject(c *gin.Context) {
 }
 
 func (p ProjectManageController) DeleteProject(c *gin.Context) {
-	token := c.MustGet("token").(*model.Token)
+	token := c.MustGet("token").(*util.Token)
 	var json deleteProjectJson
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -62,7 +63,7 @@ func (p ProjectManageController) DeleteProject(c *gin.Context) {
 }
 
 func (p ProjectManageController) EditProject(c *gin.Context) {
-	token := c.MustGet("token").(*model.Token)
+	token := c.MustGet("token").(*util.Token)
 	var json editProjectJson
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -95,7 +96,7 @@ func (p ProjectManageController) EditProject(c *gin.Context) {
 }
 
 func (p ProjectManageController) GetProjectInfo(c *gin.Context) {
-	token := c.MustGet("token").(*model.Token)
+	token := c.MustGet("token").(*util.Token)
 	var json getProjectInfoJson
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -117,7 +118,7 @@ func (p ProjectManageController) GetProjectInfo(c *gin.Context) {
 }
 
 func (p ProjectManageController) GetProjectList(c *gin.Context) {
-	token := c.MustGet("token").(*model.Token)
+	token := c.MustGet("token").(*util.Token)
 	projectList := model.QueryProjectList(token.UserId)
 	var projectInfoList []gin.H
 	for _, project := range projectList {

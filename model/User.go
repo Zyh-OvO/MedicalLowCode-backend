@@ -1,6 +1,7 @@
 package model
 
 import (
+	"MedicalLowCode-backend/util"
 	"gorm.io/gorm"
 	"time"
 )
@@ -77,7 +78,7 @@ func QueryRegisterCode(userEmail string) string {
 func RegisterNewUser(userEmail string, userName string, userPassword string) {
 	user := User{
 		UserName:     userName,
-		UserPassword: BcryptPassword(userPassword),
+		UserPassword: util.BcryptPassword(userPassword),
 		UserEmail:    userEmail,
 	}
 	result := DB.Select("user_name", "user_password", "user_email").Create(&user)
@@ -141,6 +142,6 @@ func ResetPassword(userEmail string, newPassword string) {
 	if result.Error != nil {
 		panic(result.Error)
 	}
-	user.UserPassword = BcryptPassword(newPassword)
+	user.UserPassword = util.BcryptPassword(newPassword)
 	DB.Where("user_id = ?", user.UserId).Select("user_password").Updates(&user)
 }
