@@ -43,18 +43,40 @@ func (u CtModelController) Test(c *gin.Context) {
 }
 
 func (u CtModelController) NiiTest(c *gin.Context) {
-	file, err := os.Open("C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\NiiData\\ct\\pred-0.nii")
+	file, _, err := c.Request.FormFile("nifti")
 	if err != nil {
-		fmt.Println("Error opening .nii file:", err)
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
 		return
 	}
-	defer func(file *os.File) {
+	defer func(file multipart.File) {
 		err := file.Close()
 		if err != nil {
-			fmt.Println("Error opening .nii file:", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded11"})
 			return
 		}
 	}(file)
+	// 创建一个名为 uploaded 的文件
+	out, err := os.Create("uploaded.nii.gz")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create file"})
+		return
+	}
+	defer func(out *os.File) {
+		err := out.Close()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
+			return
+		}
+	}(out)
+
+	// 将上传的 nifti 文件复制到本地文件中
+	_, err = io.Copy(out, file)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "NII file uploaded successfully"})
 }
 
@@ -118,7 +140,7 @@ func (u CtModelController) ReturnMultipleImages(c *gin.Context) {
 }
 
 func (u CtModelController) ReturnNiiGzFile(c *gin.Context) {
-	filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\imagesTr\\lung_025.nii.gz"
+	filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\imagesTr\\lung_010.nii.gz"
 	//filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_001.nii.gz"
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -133,7 +155,7 @@ func (u CtModelController) ReturnNiiGzFile(c *gin.Context) {
 }
 
 func (u CtModelController) ReturnSegFile(c *gin.Context) {
-	filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_025.nii.gz"
+	filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_010.nii.gz"
 	//filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_001.nii.gz"
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -149,20 +171,10 @@ func (u CtModelController) ReturnSegFile(c *gin.Context) {
 
 func (u CtModelController) GetNoneZeroLocation(c *gin.Context) {
 	nifti1Image := nifti.Nifti1Image{}
-	nifti1Image.LoadImage("C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_025.nii.gz", true)
+	nifti1Image.LoadImage("C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_010.nii.gz", true)
 	dims := nifti1Image.GetDims()
 	var nonZero []int
 	index := 0
-	//for z := dims[2] - 1; z >= 0; z-- {
-	//	for y := dims[1] - 1; y >= 0; y-- {
-	//		for x := 0; x < dims[0]; x++ {
-	//			if nifti1Image.GetAt(uint32(x), uint32(y), uint32(z), 0) != 0 {
-	//				nonZero = append(nonZero, index)
-	//			}
-	//			index++
-	//		}
-	//	}
-	//}
 	for z := 0; z < dims[2]; z++ {
 		for y := 0; y < dims[1]; y++ {
 			for x := 0; x < dims[0]; x++ {
