@@ -48,13 +48,15 @@ func (c *Conv3d) IsLayer() {
 	return
 }
 
-func GenerateConvLayer(node *CNode) {
+func GenerateConvLayer(node *CNode) Layer {
 	switch node.Type {
 	case "Conv1d":
-		node.SetLayer(GenerateLayer(&Conv1d{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Conv1d{}, node.Data.(map[string]any))
 	case "Conv2d":
-		node.SetLayer(GenerateLayer(&Conv2d{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Conv2d{}, node.Data.(map[string]any))
 	case "Conv3d":
-		node.SetLayer(GenerateLayer(&Conv3d{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Conv3d{}, node.Data.(map[string]any))
+	default:
+		panic("unknown layer type")
 	}
 }

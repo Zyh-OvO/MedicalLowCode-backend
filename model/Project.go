@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"gorm.io/gorm"
 	"time"
 )
@@ -23,7 +22,6 @@ func (p *Project) TableName() string {
 
 func (p *Project) BeforeDelete(tx *gorm.DB) (err error) {
 	canvas := Canvas{}
-	fmt.Printf("%+v\n", p)
 	result := DB.Where("project_id = ?", p.ProjectId).Delete(&canvas)
 	err = result.Error
 	return

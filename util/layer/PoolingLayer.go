@@ -77,19 +77,21 @@ func (a *AvgPool3d) IsLayer() {
 	return
 }
 
-func GeneratePoolingLayer(node *CNode) {
+func GeneratePoolingLayer(node *CNode) Layer {
 	switch node.Type {
 	case "MaxPool1d":
-		node.SetLayer(GenerateLayer(&MaxPool1d{}, node.Data.(map[string]any)))
+		return RawData2Layer(&MaxPool1d{}, node.Data.(map[string]any))
 	case "MaxPool2d":
-		node.SetLayer(GenerateLayer(&MaxPool2d{}, node.Data.(map[string]any)))
+		return RawData2Layer(&MaxPool2d{}, node.Data.(map[string]any))
 	case "MaxPool3d":
-		node.SetLayer(GenerateLayer(&MaxPool3d{}, node.Data.(map[string]any)))
+		return RawData2Layer(&MaxPool3d{}, node.Data.(map[string]any))
 	case "AvgPool1d":
-		node.SetLayer(GenerateLayer(&AvgPool1d{}, node.Data.(map[string]any)))
+		return RawData2Layer(&AvgPool1d{}, node.Data.(map[string]any))
 	case "AvgPool2d":
-		node.SetLayer(GenerateLayer(&AvgPool2d{}, node.Data.(map[string]any)))
+		return RawData2Layer(&AvgPool2d{}, node.Data.(map[string]any))
 	case "AvgPool3d":
-		node.SetLayer(GenerateLayer(&AvgPool3d{}, node.Data.(map[string]any)))
+		return RawData2Layer(&AvgPool3d{}, node.Data.(map[string]any))
+	default:
+		panic("unknown layer type")
 	}
 }

@@ -229,64 +229,65 @@ func (l *LogSoftmax) IsLayer() {
 	return
 }
 
-func GenerateNonlinearActivation(node *CNode) {
+func GenerateNonlinearActivation(node *CNode) Layer {
 	switch node.Type {
 	case "ELU":
-		node.SetLayer(GenerateLayer(&ELU{}, node.Data.(map[string]any)))
+		return RawData2Layer(&ELU{}, node.Data.(map[string]any))
 	case "Hardshrink":
-		node.SetLayer(GenerateLayer(&Hardshrink{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Hardshrink{}, node.Data.(map[string]any))
 	case "Hardsigmoid":
-		node.SetLayer(GenerateLayer(&Hardsigmoid{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Hardsigmoid{}, node.Data.(map[string]any))
 	case "Hardtanh":
-		node.SetLayer(GenerateLayer(&Hardtanh{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Hardtanh{}, node.Data.(map[string]any))
 	case "Hardswish":
-		node.SetLayer(GenerateLayer(&Hardswish{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Hardswish{}, node.Data.(map[string]any))
 	case "LeakyReLU":
-		node.SetLayer(GenerateLayer(&LeakyReLU{}, node.Data.(map[string]any)))
+		return RawData2Layer(&LeakyReLU{}, node.Data.(map[string]any))
 	case "LogSigmoid":
-		node.SetLayer(GenerateLayer(&LogSigmoid{}, node.Data.(map[string]any)))
+		return RawData2Layer(&LogSigmoid{}, node.Data.(map[string]any))
 	case "PReLU":
-		node.SetLayer(GenerateLayer(&PReLU{}, node.Data.(map[string]any)))
+		return RawData2Layer(&PReLU{}, node.Data.(map[string]any))
 	case "ReLU":
-		node.SetLayer(GenerateLayer(&ReLU{}, node.Data.(map[string]any)))
+		return RawData2Layer(&ReLU{}, node.Data.(map[string]any))
 	case "ReLU6":
-		node.SetLayer(GenerateLayer(&ReLU6{}, node.Data.(map[string]any)))
+		return RawData2Layer(&ReLU6{}, node.Data.(map[string]any))
 	case "RReLU":
-		node.SetLayer(GenerateLayer(&RReLU{}, node.Data.(map[string]any)))
+		return RawData2Layer(&RReLU{}, node.Data.(map[string]any))
 	case "SELU":
-		node.SetLayer(GenerateLayer(&SELU{}, node.Data.(map[string]any)))
+		return RawData2Layer(&SELU{}, node.Data.(map[string]any))
 	case "CELU":
-		node.SetLayer(GenerateLayer(&CELU{}, node.Data.(map[string]any)))
+		return RawData2Layer(&CELU{}, node.Data.(map[string]any))
 	case "GELU":
-		node.SetLayer(GenerateLayer(&GELU{}, node.Data.(map[string]any)))
+		return RawData2Layer(&GELU{}, node.Data.(map[string]any))
 	case "Sigmoid":
-		node.SetLayer(GenerateLayer(&Sigmoid{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Sigmoid{}, node.Data.(map[string]any))
 	case "SiLU":
-		node.SetLayer(GenerateLayer(&SiLU{}, node.Data.(map[string]any)))
+		return RawData2Layer(&SiLU{}, node.Data.(map[string]any))
 	case "Mish":
-		node.SetLayer(GenerateLayer(&Mish{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Mish{}, node.Data.(map[string]any))
 	case "Softplus":
-		node.SetLayer(GenerateLayer(&Softplus{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Softplus{}, node.Data.(map[string]any))
 	case "Softshrink":
-		node.SetLayer(GenerateLayer(&Softshrink{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Softshrink{}, node.Data.(map[string]any))
 	case "Softsign":
-		node.SetLayer(GenerateLayer(&Softsign{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Softsign{}, node.Data.(map[string]any))
 	case "Tanh":
-		node.SetLayer(GenerateLayer(&Tanh{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Tanh{}, node.Data.(map[string]any))
 	case "Tanhshrink":
-		node.SetLayer(GenerateLayer(&Tanhshrink{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Tanhshrink{}, node.Data.(map[string]any))
 	case "Threshold":
-		node.SetLayer(GenerateLayer(&Threshold{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Threshold{}, node.Data.(map[string]any))
 	case "GLU":
-		node.SetLayer(GenerateLayer(&GLU{}, node.Data.(map[string]any)))
+		return RawData2Layer(&GLU{}, node.Data.(map[string]any))
 	case "Softmin":
-		node.SetLayer(GenerateLayer(&Softmin{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Softmin{}, node.Data.(map[string]any))
 	case "Softmax":
-		node.SetLayer(GenerateLayer(&Softmax{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Softmax{}, node.Data.(map[string]any))
 	case "Softmax2d":
-		node.SetLayer(GenerateLayer(&Softmax2d{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Softmax2d{}, node.Data.(map[string]any))
 	case "LogSoftmax":
-		node.SetLayer(GenerateLayer(&LogSoftmax{}, node.Data.(map[string]any)))
-
+		return RawData2Layer(&LogSoftmax{}, node.Data.(map[string]any))
+	default:
+		panic("unknown layer type")
 	}
 }

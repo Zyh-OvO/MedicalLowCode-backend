@@ -141,8 +141,6 @@ func (u UserController) Login(c *gin.Context) {
 }
 
 func (u UserController) GetResetCode(c *gin.Context) {
-	fmt.Println(c)
-	fmt.Println(u)
 	var json getResetCodeJson
 	if err := c.ShouldBindJSON(&json); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
