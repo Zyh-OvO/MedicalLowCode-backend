@@ -44,15 +44,17 @@ func (b *BCELoss) IsLayer() {
 	return
 }
 
-func GenerateLossFunction(node *CNode) {
+func GenerateLossFunction(node *CNode) Layer {
 	switch node.Type {
 	case "L1Loss":
-		node.SetLayer(GenerateLayer(&L1Loss{}, node.Data.(map[string]any)))
+		return RawData2Layer(&L1Loss{}, node.Data.(map[string]any))
 	case "MSELoss":
-		node.SetLayer(GenerateLayer(&MSELoss{}, node.Data.(map[string]any)))
+		return RawData2Layer(&MSELoss{}, node.Data.(map[string]any))
 	case "CrossEntropyLoss":
-		node.SetLayer(GenerateLayer(&CrossEntropyLoss{}, node.Data.(map[string]any)))
+		return RawData2Layer(&CrossEntropyLoss{}, node.Data.(map[string]any))
 	case "BCELoss":
-		node.SetLayer(GenerateLayer(&BCELoss{}, node.Data.(map[string]any)))
+		return RawData2Layer(&BCELoss{}, node.Data.(map[string]any))
+	default:
+		panic("unknown layer type")
 	}
 }

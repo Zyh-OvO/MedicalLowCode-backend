@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"github.com/dlclark/regexp2"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -10,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"time"
+	"unicode"
 )
 
 var tokenKey = []byte("lowcode")
@@ -142,4 +144,18 @@ func SetDefault(v any) {
 			}
 		}
 	}
+}
+
+// CamelCaseToSnakeCase 驼峰转蛇形
+func CamelCaseToSnakeCase(input string) string {
+	var buffer bytes.Buffer
+
+	for i, char := range input {
+		if unicode.IsUpper(char) && i > 0 {
+			buffer.WriteRune('_')
+		}
+		buffer.WriteRune(unicode.ToLower(char))
+	}
+
+	return buffer.String()
 }

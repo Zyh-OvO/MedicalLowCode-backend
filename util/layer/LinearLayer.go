@@ -30,13 +30,15 @@ func (l *LazyLinear) IsLayer() {
 	return
 }
 
-func GenerateLinearLayer(node *CNode) {
+func GenerateLinearLayer(node *CNode) Layer {
 	switch node.Type {
 	case "Linear":
-		node.SetLayer(GenerateLayer(&Linear{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Linear{}, node.Data.(map[string]any))
 	case "Bilinear":
-		node.SetLayer(GenerateLayer(&Bilinear{}, node.Data.(map[string]any)))
+		return RawData2Layer(&Bilinear{}, node.Data.(map[string]any))
 	case "LazyLinear":
-		node.SetLayer(GenerateLayer(&LazyLinear{}, node.Data.(map[string]any)))
+		return RawData2Layer(&LazyLinear{}, node.Data.(map[string]any))
+	default:
+		panic("unknown layer type")
 	}
 }

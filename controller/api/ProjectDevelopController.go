@@ -4,6 +4,7 @@ import (
 	"MedicalLowCode-backend/model"
 	"MedicalLowCode-backend/util"
 	"MedicalLowCode-backend/util/layer"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -37,6 +38,7 @@ func (p ProjectDevelopController) ExportCode(c *gin.Context) {
 		return
 	}
 	code := layer.ExportCode(canvas.CanvasContent)
+	fmt.Println(code)
 	c.JSON(http.StatusOK, gin.H{
 		"code": code,
 	})

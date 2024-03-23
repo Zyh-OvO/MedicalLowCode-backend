@@ -1,6 +1,7 @@
 package layer
 
 import (
+	"errors"
 	"gopkg.in/gyuho/goraph.v2"
 )
 
@@ -14,26 +15,33 @@ func ExportCode(canvasContent string) string {
 }
 
 func generateCode(graph goraph.Graph) (string, error) {
-	code := "code"
+	var code string
 	topologicalNodes, ok := TopologicalSort(graph)
 	if !ok {
-		panic("topological sort failed")
+		return "", errors.New("topological sort failed")
 	}
-	// 生成layer
+	//生成两部分代码
+	var initLayerCodes, forwardCodes []string
+	layerCounter := make(map[string]int)
 	for _, node := range topologicalNodes {
-		switch node.Type {
-		case "Conv1d", "Conv2d", "Conv3d":
-			GenerateConvLayer(node)
-		case "Linear", "Bilinear", "LazyLinear":
-			GenerateLinearLayer(node)
-		case "L1Loss", "MSELoss", "CrossEntropyLoss", "BCELoss":
-			GenerateLossFunction(node)
-		case "ELU", "Hardshrink", "Hardsigmoid", "Hardtanh", "Hardswish", "LeakyReLU", "LogSigmoid", "PReLU", "ReLU", "ReLU6", "RReLU", "SELU", "CELU", "GELU", "Sigmoid", "SiLU", "Mish", "Softplus", "Softshrink", "Softsign", "Tanh", "Tanhshrink", "Threshold", "GLU", "Softmin", "Softmax", "Softmax2d", "LogSoftmax":
-			GenerateNonlinearActivation(node)
-		case "MaxPool1d", "MaxPool2d", "MaxPool3d", "AvgPool1d", "AvgPool2d", "AvgPool3d":
-			GeneratePoolingLayer(node)
-		}
+		layerCounter[node.Type]++
+		node.GenerateLayer(layerCounter[node.Type])
+		layerCode, forwardCode := node.GenerateCode()
+		initLayerCodes = append(initLayerCodes, layerCode)
+		forwardCodes = append(forwardCodes, forwardCode)
 	}
-
+	//生成整个网络的代码
+	code += "import torch.nn as nn\n\n"
+	code += "class Net(nn.Module):\n"
+	code += "    def __init__(self):\n"
+	code += "        super().__init__()\n"
+	for _, layerCode := range initLayerCodes {
+		code += "        " + layerCode + "\n"
+	}
+	code += "    def forward(self, x):\n"
+	for _, forwardCode := range forwardCodes {
+		code += "        " + forwardCode + "\n"
+	}
+	code += "        return " + topologicalNodes[len(topologicalNodes)-1].OutputName + "\n"
 	return code, nil
 }
