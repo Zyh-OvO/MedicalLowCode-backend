@@ -14,25 +14,10 @@ import (
 	"strings"
 )
 
-type CtModelController struct {
+type DefaultModelController struct {
 }
 
-type getTestCodeJson struct {
-	TestType1 string `json:"testType1"`
-}
-
-type getJson struct {
-	TestType2 string `json:"testType2"`
-	TestType3 string `json:"testType3"`
-}
-
-type location struct {
-	X int `json:"x"`
-	Y int `json:"y"`
-	Z int `json:"z"`
-}
-
-func (u CtModelController) Test(c *gin.Context) {
+func (u DefaultModelController) Test(c *gin.Context) {
 	username := c.Query("username")
 	age := c.Query("age")
 
@@ -42,7 +27,7 @@ func (u CtModelController) Test(c *gin.Context) {
 	})
 }
 
-func (u CtModelController) NiiTest(c *gin.Context) {
+func (u DefaultModelController) NiiTest(c *gin.Context) {
 	file, _, err := c.Request.FormFile("nifti")
 	if err != nil {
 		fmt.Println(err)
@@ -80,7 +65,7 @@ func (u CtModelController) NiiTest(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "NII file uploaded successfully"})
 }
 
-func (u CtModelController) ImageTest(c *gin.Context) {
+func (u DefaultModelController) ImageTest(c *gin.Context) {
 	file, _, err := c.Request.FormFile("image")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
@@ -118,7 +103,7 @@ func (u CtModelController) ImageTest(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Image uploaded successfully"})
 }
 
-func (u CtModelController) ReturnMultipleImages(c *gin.Context) {
+func (u DefaultModelController) ReturnMultipleImages(c *gin.Context) {
 	// 从本地文件系统中读取多个PNG图片
 	imagePaths := []string{
 		"C:\\code\\go\\fengru-backend\\output_slice_20.png",
@@ -139,7 +124,7 @@ func (u CtModelController) ReturnMultipleImages(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"images": images})
 }
 
-func (u CtModelController) ReturnNiiGzFile(c *gin.Context) {
+func (u DefaultModelController) ReturnNiiGzFile(c *gin.Context) {
 	filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\imagesTr\\lung_010.nii.gz"
 	//filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_001.nii.gz"
 	data, err := ioutil.ReadFile(filePath)
@@ -154,7 +139,7 @@ func (u CtModelController) ReturnNiiGzFile(c *gin.Context) {
 	c.Data(http.StatusOK, "application/octet-stream", data)
 }
 
-func (u CtModelController) ReturnSegFile(c *gin.Context) {
+func (u DefaultModelController) ReturnSegFile(c *gin.Context) {
 	filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_010.nii.gz"
 	//filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_001.nii.gz"
 	data, err := ioutil.ReadFile(filePath)
@@ -169,7 +154,7 @@ func (u CtModelController) ReturnSegFile(c *gin.Context) {
 	c.Data(http.StatusOK, "application/octet-stream", data)
 }
 
-func (u CtModelController) GetNoneZeroLocation(c *gin.Context) {
+func (u DefaultModelController) GetNoneZeroLocation(c *gin.Context) {
 	nifti1Image := nifti.Nifti1Image{}
 	nifti1Image.LoadImage("C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_010.nii.gz", true)
 	dims := nifti1Image.GetDims()
@@ -188,7 +173,7 @@ func (u CtModelController) GetNoneZeroLocation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"nonZero": nonZero})
 }
 
-func (u CtModelController) DimTest(c *gin.Context) {
+func (u DefaultModelController) DimTest(c *gin.Context) {
 	nifti1Image := nifti.Nifti1Image{}
 	nifti1Image.LoadImage("C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\imagesTr\\lung_023.nii.gz", true)
 	dims := nifti1Image.GetDims()

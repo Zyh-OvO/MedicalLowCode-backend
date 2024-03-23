@@ -34,6 +34,7 @@ func ApiRouterInit(router *gin.Engine) {
 	moduleManageRouterInit(apiRouter)
 	projectDevelopRouterInit(apiRouter)
 	defaultModuleManageRouterInit(apiRouter)
+	defaultDataManageRouterInit(apiRouter)
 }
 
 func userRouterInit(router *gin.RouterGroup) {
@@ -82,11 +83,17 @@ func projectDevelopRouterInit(router *gin.RouterGroup) {
 
 func defaultModuleManageRouterInit(router *gin.RouterGroup) {
 	defaultModuleManageRouter := router.Group("/defaultModule")
-	defaultModuleManageRouter.POST("/imageTest", api.CtModelController{}.ImageTest)
-	defaultModuleManageRouter.POST("/niiTest", api.CtModelController{}.NiiTest)
-	defaultModuleManageRouter.POST("/getImages", api.CtModelController{}.ReturnMultipleImages)
-	defaultModuleManageRouter.GET("/returnNiiGzFile", api.CtModelController{}.ReturnNiiGzFile)
-	defaultModuleManageRouter.GET("/returnSegFile", api.CtModelController{}.ReturnSegFile)
-	defaultModuleManageRouter.GET("/returnSegData", api.CtModelController{}.GetNoneZeroLocation)
-	defaultModuleManageRouter.GET("/getDim", api.CtModelController{}.DimTest)
+	defaultModuleManageRouter.POST("/imageTest", api.DefaultModelController{}.ImageTest)
+	defaultModuleManageRouter.POST("/niiTest", api.DefaultModelController{}.NiiTest)
+	defaultModuleManageRouter.POST("/getImages", api.DefaultModelController{}.ReturnMultipleImages)
+	defaultModuleManageRouter.GET("/returnNiiGzFile", api.DefaultModelController{}.ReturnNiiGzFile)
+	defaultModuleManageRouter.GET("/returnSegFile", api.DefaultModelController{}.ReturnSegFile)
+	defaultModuleManageRouter.GET("/returnSegData", api.DefaultModelController{}.GetNoneZeroLocation)
+	defaultModuleManageRouter.GET("/getDim", api.DefaultModelController{}.DimTest)
+}
+
+func defaultDataManageRouterInit(router *gin.RouterGroup) {
+	defaultDataManageRouter := router.Group("/defaultData")
+	defaultDataManageRouter.POST("/getAllDataSet", api.DefaultDataController{}.GetAllDataSet)
+	defaultDataManageRouter.POST("/getOneDataSet", api.DefaultDataController{}.GetOneDataSet)
 }
