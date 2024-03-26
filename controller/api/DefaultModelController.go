@@ -10,9 +10,12 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
+
+const viewNiiGz = "data/view_nii_gz/"
 
 type DefaultModelController struct {
 }
@@ -28,12 +31,14 @@ func (u DefaultModelController) Test(c *gin.Context) {
 }
 
 func (u DefaultModelController) NiiTest(c *gin.Context) {
-	file, _, err := c.Request.FormFile("nifti")
+	file, handler, err := c.Request.FormFile("nifti")
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
 		return
 	}
+	name := handler.Filename
+	fmt.Println(name)
 	defer func(file multipart.File) {
 		err := file.Close()
 		if err != nil {
@@ -41,8 +46,12 @@ func (u DefaultModelController) NiiTest(c *gin.Context) {
 			return
 		}
 	}(file)
-	// 创建一个名为 uploaded 的文件
-	out, err := os.Create("uploaded.nii.gz")
+	if createFolderIfNotExists(viewNiiGz) != true {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create folder"})
+		return
+	}
+	// 在本地创建一个同名的文件
+	out, err := os.Create(viewNiiGz + name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create file"})
 		return
@@ -125,7 +134,11 @@ func (u DefaultModelController) ReturnMultipleImages(c *gin.Context) {
 }
 
 func (u DefaultModelController) ReturnNiiGzFile(c *gin.Context) {
-	filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\imagesTr\\lung_010.nii.gz"
+	fmt.Println("请求的URL是：", c.Request.URL.String())
+	name := c.Query("file")
+	fmt.Println(name)
+	//filePath := "/Users/qhy/Desktop/lth/冯如杯/hepaticvessel_001.nii.gz"
+	filePath := viewNiiGz + name
 	//filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_001.nii.gz"
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -133,10 +146,12 @@ func (u DefaultModelController) ReturnNiiGzFile(c *gin.Context) {
 		return
 	}
 
-	filename := "file.nii.gz"
-	c.Header("Content-Disposition", "attachment; filename="+filename)
+	c.Header("Content-Disposition", "attachment; filename="+name)
 
 	c.Data(http.StatusOK, "application/octet-stream", data)
+
+	// 删除已经查看的临时文件
+	//os.Remove(filePath)
 }
 
 func (u DefaultModelController) ReturnSegFile(c *gin.Context) {
@@ -188,4 +203,26 @@ func intArrayToString(arr []int) string {
 		strArr = append(strArr, strconv.Itoa(v))
 	}
 	return strings.Join(strArr, ", ")
+}
+
+func createFolderIfNotExists(folderPath string) bool {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Error getting current directory:", err)
+		return false
+	}
+	folderPath = filepath.Join(currentDir, folderPath)
+	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
+		err := os.MkdirAll(folderPath, 0755)
+		if err != nil {
+			fmt.Println("Error creating folder:", err)
+			return false
+		} else {
+			fmt.Println("Folder created successfully:", folderPath)
+			return true
+		}
+	} else {
+		fmt.Println("Folder already exists, no action taken:", folderPath)
+		return true
+	}
 }
