@@ -6,8 +6,11 @@ import (
 	"MedicalLowCode-backend/util/layer"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/ssh"
 	"net/http"
+	"os/exec"
 	"strconv"
+	"time"
 )
 
 type ProjectDevelopController struct{}
@@ -58,7 +61,48 @@ func (p ProjectDevelopController) SubmitTrainingTask(c *gin.Context) {
 		return
 	}
 	//todo
-
+	code := layer.ExportCode(canvas.CanvasContent)
+	//ssh
+	vpnCmd1 := exec.Command("sh", "-c", "~/lowcode/actvpn.sh")
+	err := vpnCmd1.Run()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	sshConfig, err := util.GetSSHConfig()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	client, err := ssh.Dial("tcp", "192.168.5.201:22", sshConfig)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	defer client.Close()
+	session1, err := client.NewSession()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	defer session1.Close()
+	userDirPath := fmt.Sprintf("user_%d/project_%d/%s/", token.UserId, projectId, util.UnixToDate(time.Now().Unix()))
+	cmd1 := "mkdir -p ~/lowcode/" + userDirPath
+	cmd2 := "cd ~/lowcode/" + userDirPath
+	cmd3 := "echo '" + code + "' > train.py"
+	cmd4 := "cp ~/lowcode/myscript ./myscript"
+	cmd5 := "sbatch --gres=gpu:V100:1 ./myscript"
+	allCmd := cmd1 + " && " + cmd2 + " && " + cmd3 + " && " + cmd4 + " && " + cmd5
+	if err := session1.Run(allCmd); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	vpnCmd2 := exec.Command("sh", "-c", "~/lowcode/stopactvpn.sh")
+	err = vpnCmd2.Run()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{})
 }
 

@@ -5,8 +5,10 @@ import (
 	"github.com/dlclark/regexp2"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/crypto/ssh"
 	"gopkg.in/gomail.v2"
 	"math/rand"
+	"os"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -23,9 +25,9 @@ type Token struct {
 	jwt.RegisteredClaims
 }
 
-func UnixToDate(timestamp int) string {
-	t := time.Unix(int64(timestamp), 0)
-	return t.Format("2006-01-02 15:04:05")
+func UnixToDate(timestamp int64) string {
+	t := time.Unix(timestamp, 0)
+	return t.Format("2006-01-02-15-04-05")
 }
 
 func GetDay() string {
@@ -158,4 +160,24 @@ func CamelCaseToSnakeCase(input string) string {
 	}
 
 	return buffer.String()
+}
+
+func GetSSHConfig() (*ssh.ClientConfig, error) {
+	key, err := os.ReadFile("/root/.ssh/id_rsa")
+	if err != nil {
+		return nil, err
+	}
+	signer, err := ssh.ParsePrivateKey(key)
+	if err != nil {
+		return nil, err
+	}
+	config := &ssh.ClientConfig{
+		User: "wxgroup1",
+		Auth: []ssh.AuthMethod{
+			//ssh.Password("Buaa123456"),
+			ssh.PublicKeys(signer),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // 不验证主机密钥
+	}
+	return config, nil
 }

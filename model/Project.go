@@ -55,7 +55,7 @@ func (m Module) TableName() string {
 	return "module"
 }
 
-func NewProject(userId int, projectName string, projectDescription string) Project {
+func NewProject(userId int, projectName string, projectDescription string) *Project {
 	project := Project{
 		UserId:             userId,
 		ProjectName:        projectName,
@@ -65,7 +65,7 @@ func NewProject(userId int, projectName string, projectDescription string) Proje
 	if err := DB.Create(&project).Error; err != nil {
 		panic(err)
 	}
-	return project
+	return &project
 }
 
 func DeleteProject(userId int, projectId int) {
