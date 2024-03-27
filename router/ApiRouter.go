@@ -34,6 +34,7 @@ func ApiRouterInit(router *gin.Engine) {
 	moduleManageRouterInit(apiRouter)
 	projectDevelopRouterInit(apiRouter)
 	defaultModuleManageRouterInit(apiRouter)
+	fileManageRouterInit(apiRouter)
 }
 
 func userRouterInit(router *gin.RouterGroup) {
@@ -89,4 +90,17 @@ func defaultModuleManageRouterInit(router *gin.RouterGroup) {
 	defaultModuleManageRouter.GET("/returnSegFile", api.CtModelController{}.ReturnSegFile)
 	defaultModuleManageRouter.GET("/returnSegData", api.CtModelController{}.GetNoneZeroLocation)
 	defaultModuleManageRouter.GET("/getDim", api.CtModelController{}.DimTest)
+}
+
+func fileManageRouterInit(router *gin.RouterGroup) {
+	fileManageRouter := router.Group("/fileManage")
+	fileManageRouter.Use(CheckToken)
+	fileManageRouter.POST("/getFileTree", api.FileManageController{}.GetFileTree)
+	fileManageRouter.POST("/uploadFile", api.FileManageController{}.UploadFile)
+	fileManageRouter.POST("/deleteFile", api.FileManageController{}.DeleteFile)
+	fileManageRouter.POST("/renameFile", api.FileManageController{}.RenameFile)
+	//fileManageRouter.POST("/copyFile", api.FileManageController{}.CopyFile)
+	fileManageRouter.POST("/newDirectory", api.FileManageController{}.NewDirectory)
+	fileManageRouter.POST("/deleteDirectory", api.FileManageController{}.DeleteDirectory)
+	fileManageRouter.POST("/renameDirectory", api.FileManageController{}.RenameDirectory)
 }
