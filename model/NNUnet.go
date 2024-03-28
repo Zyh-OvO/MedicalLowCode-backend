@@ -35,9 +35,9 @@ func AddNnunetInferenceFile(userId int, modelId int, fileName string, address st
 	return file
 }
 
-func QueryNnunetInferenceFile(userId int, modelId int, fileName string) *InferenceFile {
+func QueryNnunetInferenceFile(Id int) *InferenceFile {
 	file := InferenceFile{}
-	result := DB.Where("user_id = ? and model_id = ? and name = ?", userId, modelId, fileName).Last(&file)
+	result := DB.Where("id = ?", Id).Last(&file)
 	if err := result.Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil

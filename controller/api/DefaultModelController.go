@@ -144,13 +144,14 @@ func (u DefaultModelController) ReturnMultipleImages(c *gin.Context) {
 
 func (u DefaultModelController) ReturnNiiGzFile(c *gin.Context) {
 	fmt.Println("请求的URL是：", c.Request.URL.String())
-	name := c.Query("file")
-	modelId, err := strconv.Atoi(c.Query("model_id"))
-	fmt.Println(modelId)
+	//name := c.Query("file")
+	//modelId, err := strconv.Atoi(c.Query("model_id"))
+	//fmt.Println(modelId)
 	token := c.MustGet("token").(*util.Token)
 	fmt.Println(token)
+	fileId, _ := strconv.Atoi(c.Param("id"))
 	//filePath := "/Users/qhy/Desktop/lth/冯如杯/hepaticvessel_001.nii.gz"
-	inferenceFile := model.QueryNnunetInferenceFile(token.UserId, modelId, name)
+	inferenceFile := model.QueryNnunetInferenceFile(fileId)
 	filePath := inferenceFile.Address
 	//filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_001.nii.gz"
 	data, err := ioutil.ReadFile(filePath)
@@ -159,7 +160,7 @@ func (u DefaultModelController) ReturnNiiGzFile(c *gin.Context) {
 		return
 	}
 
-	c.Header("Content-Disposition", "attachment; filename="+name)
+	c.Header("Content-Disposition", "attachment; filename="+inferenceFile.Name)
 	c.Header("file_id", strconv.Itoa(inferenceFile.Id))
 
 	c.Data(http.StatusOK, "application/octet-stream", data)

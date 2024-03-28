@@ -29,6 +29,10 @@ func CheckToken(c *gin.Context) {
 
 func CheckCornerStoneToken(c *gin.Context) {
 	tk := c.Query("token")
+	if tk == "" || tk == "null" {
+		tk = c.Param("token")
+		fmt.Println("param_token:", tk)
+	}
 	if tk == "" || tk == "null" || tk == "111" {
 		tk = c.Request.Header.Get("token")
 		if tk == "" {
@@ -122,7 +126,7 @@ func defaultModuleManageRouterInit(router *gin.RouterGroup) {
 	defaultModuleManageRouter.POST("/imageTest", api.DefaultModelController{}.ImageTest)
 	defaultModuleManageRouter.POST("/niiTest", api.DefaultModelController{}.NiiTest)
 	defaultModuleManageRouter.POST("/getImages", api.DefaultModelController{}.ReturnMultipleImages)
-	defaultModuleManageRouter.GET("/returnNiiGzFile", api.DefaultModelController{}.ReturnNiiGzFile)
+	defaultModuleManageRouter.GET("/returnNiiGzFile/:token/:id", api.DefaultModelController{}.ReturnNiiGzFile)
 	defaultModuleManageRouter.GET("/returnSegFile", api.DefaultModelController{}.ReturnSegFile)
 	defaultModuleManageRouter.GET("/returnSegData", api.DefaultModelController{}.GetNoneZeroLocation)
 	defaultModuleManageRouter.GET("/getDim", api.DefaultModelController{}.DimTest)
