@@ -40,7 +40,6 @@ func (u DefaultModelController) NiiTest(c *gin.Context) {
 		return
 	}
 	name := handler.Filename
-	fmt.Println(name)
 	defer func(file multipart.File) {
 		err := file.Close()
 		if err != nil {
@@ -58,10 +57,10 @@ func (u DefaultModelController) NiiTest(c *gin.Context) {
 
 	// 加入数据库操作
 	// TODO:文件名重复？
-	project := model.AddNnunetInferenceFile(token.UserId, modelId, name, filePath+name)
+	inferenceFile := model.AddNnunetInferenceFile(token.UserId, modelId, name, filePath+name)
 
 	// 在本地创建一个同名的文件
-	out, err := os.Create(project.Address)
+	out, err := os.Create(inferenceFile.Address)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create file"})
 		return
@@ -81,7 +80,8 @@ func (u DefaultModelController) NiiTest(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "NII file uploaded successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "NII file uploaded successfully",
+		"file_id": inferenceFile.Id})
 }
 
 func (u DefaultModelController) ImageTest(c *gin.Context) {
@@ -160,6 +160,7 @@ func (u DefaultModelController) ReturnNiiGzFile(c *gin.Context) {
 	}
 
 	c.Header("Content-Disposition", "attachment; filename="+name)
+	c.Header("file_id", strconv.Itoa(inferenceFile.Id))
 
 	c.Data(http.StatusOK, "application/octet-stream", data)
 
