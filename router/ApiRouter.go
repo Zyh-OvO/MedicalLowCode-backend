@@ -3,6 +3,7 @@ package router
 import (
 	"MedicalLowCode-backend/controller/api"
 	"MedicalLowCode-backend/util"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -23,6 +24,40 @@ func CheckToken(c *gin.Context) {
 			c.Set("token", token)
 			c.Next()
 		}
+	}
+}
+
+func CheckCornerStoneToken(c *gin.Context) {
+	tk := c.Query("token")
+	if tk == "" || tk == "null" || tk == "111" {
+		tk = c.Request.Header.Get("token")
+		if tk == "" {
+			//	c.JSON(http.StatusUnauthorized, gin.H{})
+			//	c.Abort()
+			//	return
+			// TODO: implement real token
+			token, err := util.GiveStaticToken()
+			if err != nil {
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error": err.Error(),
+				})
+				c.Abort()
+			} else {
+				c.Set("token", token)
+				c.Next()
+				fmt.Println("token acquired")
+			}
+		}
+	}
+	token, err := util.ParseToken(tk)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": err.Error(),
+		})
+		c.Abort()
+	} else {
+		c.Set("token", token)
+		c.Next()
 	}
 }
 
@@ -83,6 +118,7 @@ func projectDevelopRouterInit(router *gin.RouterGroup) {
 
 func defaultModuleManageRouterInit(router *gin.RouterGroup) {
 	defaultModuleManageRouter := router.Group("/defaultModule")
+	defaultModuleManageRouter.Use(CheckCornerStoneToken)
 	defaultModuleManageRouter.POST("/imageTest", api.DefaultModelController{}.ImageTest)
 	defaultModuleManageRouter.POST("/niiTest", api.DefaultModelController{}.NiiTest)
 	defaultModuleManageRouter.POST("/getImages", api.DefaultModelController{}.ReturnMultipleImages)

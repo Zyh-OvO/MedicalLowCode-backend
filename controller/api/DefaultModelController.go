@@ -1,6 +1,8 @@
 package api
 
 import (
+	"MedicalLowCode-backend/model"
+	"MedicalLowCode-backend/util"
 	"encoding/base64"
 	"fmt"
 	"github.com/KyungWonPark/nifti"
@@ -42,16 +44,24 @@ func (u DefaultModelController) NiiTest(c *gin.Context) {
 	defer func(file multipart.File) {
 		err := file.Close()
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded11"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot close file stream"})
 			return
 		}
 	}(file)
-	if createFolderIfNotExists(viewNiiGz) != true {
+	modelId, _ := strconv.Atoi(c.Request.FormValue("modelId"))
+	token := c.MustGet("token").(*util.Token)
+	filePath := viewNiiGz + strconv.Itoa(token.UserId) + "/"
+	if createFolderIfNotExists(filePath) != true {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create folder"})
 		return
 	}
+
+	// 加入数据库操作
+	// TODO:文件名重复？
+	project := model.AddNnunetInferenceFile(token.UserId, modelId, name, filePath+name)
+
 	// 在本地创建一个同名的文件
-	out, err := os.Create(viewNiiGz + name)
+	out, err := os.Create(project.Address)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create file"})
 		return
@@ -83,11 +93,10 @@ func (u DefaultModelController) ImageTest(c *gin.Context) {
 	defer func(file multipart.File) {
 		err := file.Close()
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot close file stream"})
 			return
 		}
 	}(file)
-
 	// 创建一个名为 uploaded.png 的文件
 	out, err := os.Create("uploaded.png")
 	if err != nil {
@@ -136,9 +145,13 @@ func (u DefaultModelController) ReturnMultipleImages(c *gin.Context) {
 func (u DefaultModelController) ReturnNiiGzFile(c *gin.Context) {
 	fmt.Println("请求的URL是：", c.Request.URL.String())
 	name := c.Query("file")
-	fmt.Println(name)
+	modelId, err := strconv.Atoi(c.Query("model_id"))
+	fmt.Println(modelId)
+	token := c.MustGet("token").(*util.Token)
+	fmt.Println(token)
 	//filePath := "/Users/qhy/Desktop/lth/冯如杯/hepaticvessel_001.nii.gz"
-	filePath := viewNiiGz + name
+	inferenceFile := model.QueryNnunetInferenceFile(token.UserId, modelId, name)
+	filePath := inferenceFile.Address
 	//filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_001.nii.gz"
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {

@@ -159,3 +159,16 @@ func CamelCaseToSnakeCase(input string) string {
 
 	return buffer.String()
 }
+
+func GiveStaticToken() (*Token, error) {
+	token := &Token{
+		UserId:    0,
+		UserName:  "nii",
+		UserEmail: "nii@test.com",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 365)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+	return token, nil
+}
