@@ -103,4 +103,5 @@ func fileManageRouterInit(router *gin.RouterGroup) {
 	fileManageRouter.POST("/newDirectory", api.FileManageController{}.NewDirectory)
 	fileManageRouter.POST("/deleteDirectory", api.FileManageController{}.DeleteDirectory)
 	fileManageRouter.POST("/renameDirectory", api.FileManageController{}.RenameDirectory)
+	fileManageRouter.POST("/getRootDir", api.FileManageController{}.GetRootDir)
 }

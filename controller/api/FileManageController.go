@@ -72,8 +72,8 @@ func (f FileManageController) GetDirContent(c *gin.Context) {
 	dirs := model.GetDirsUnderDir(token.UserId, dirId)
 	files := model.GetFilesUnderDir(token.UserId, dirId)
 	dirContent := make(map[string]interface{})
-	var retDirs []retDir
-	var retFiles []retFile
+	retDirs := make([]retDir, 0)
+	retFiles := make([]retFile, 0)
 	for _, dir := range dirs {
 		dirPath := filepath.Join(parentDirPath, dir.DirName)
 		retDirs = append(retDirs, retDir{
@@ -90,7 +90,7 @@ func (f FileManageController) GetDirContent(c *gin.Context) {
 			Path:     filePath,
 		})
 	}
-	dirContent["dirs"] = retDirs
+	dirContent["directories"] = retDirs
 	dirContent["files"] = retFiles
 	c.JSON(http.StatusOK, dirContent)
 }
@@ -171,4 +171,16 @@ func (f FileManageController) RenameDirectory(c *gin.Context) {
 	dirId, _ := strconv.Atoi(json.DirId)
 	model.RenameDirectory(token.UserId, dirId, json.DirName)
 	c.JSON(http.StatusOK, gin.H{})
+}
+
+func (f FileManageController) GetRootDir(c *gin.Context) {
+	token := c.MustGet("token").(*util.Token)
+	dir := model.GetRootDir(token.UserId)
+	if dir == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"dirId": dir.DirId,
+	})
 }

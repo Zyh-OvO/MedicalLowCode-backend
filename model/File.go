@@ -9,12 +9,13 @@ import (
 	"path/filepath"
 )
 
-var RootDirId = 0
+var RootDirPath = "./userFile/"
 
 type Directory struct {
 	DirId   int `gorm:"primaryKey;autoIncrement"`
 	UserId  int
 	DirName string
+	IsRoot  bool
 }
 
 func (d Directory) TableName() string {
@@ -49,15 +50,12 @@ type queryDirPathResult struct {
 }
 
 func QueryDirPath(userId, dirId int) (string, error) {
-	if dirId == RootDirId {
-		return "/", nil
-	}
 	var results []queryDirPathResult
 	sql1 := "select ancestor_id, dir_name, depth from directory_path left join directory on directory_path.ancestor_id = directory.dir_id where user_id = ? and descendant_id = ? order by depth desc"
 	if err := DB.Raw(sql1, userId, dirId).Scan(&results).Error; err != nil {
 		return "", err
 	}
-	dirPath := "/"
+	dirPath := RootDirPath
 	for _, r := range results {
 		dirPath = filepath.Join(dirPath, r.DirName)
 	}
@@ -80,6 +78,7 @@ func NewDirectory(userId int, parentDirId int, dirName string) *Directory {
 	dir := Directory{
 		UserId:  userId,
 		DirName: dirName,
+		IsRoot:  false,
 	}
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		//sql1
@@ -121,8 +120,10 @@ func DeleteDirectory(userId int, dirId int) {
 		if dirPath, err := QueryDirPath(userId, dirId); err != nil {
 			return err
 		} else {
-			if err := tx.Where("user_id = ? and dir_id = ?", userId, dirId).Delete(&Directory{}).Error; err != nil {
-				return err
+			if result := tx.Where("user_id = ? and dir_id = ? and is_root = ?", userId, dirId, false).Delete(&Directory{}); result.Error != nil {
+				return result.Error
+			} else if result.RowsAffected == 0 {
+				return os.ErrNotExist
 			}
 			if err := os.RemoveAll(dirPath); err != nil {
 				return err
@@ -141,8 +142,10 @@ func RenameDirectory(userId int, dirId int, dirName string) {
 			return err
 		} else {
 			newDirPath := filepath.Join(filepath.Dir(dirPath), dirName)
-			if err := tx.Model(&Directory{}).Where("user_id = ? and dir_id = ?", userId, dirId).Update("dir_name", dirName).Error; err != nil {
-				return err
+			if result := tx.Model(&Directory{}).Where("user_id = ? and dir_id = ? and is_root = ?", userId, dirId, false).Update("dir_name", dirName); result.Error != nil {
+				return result.Error
+			} else if result.RowsAffected == 0 {
+				return os.ErrNotExist
 			}
 			if err := os.Rename(dirPath, newDirPath); err != nil {
 				return err
@@ -239,13 +242,13 @@ func GetFilesUnderDir(userId, dirId int) []File {
 }
 
 type GetDirContentResult struct {
-	DirId   int    `gorm:"column:dir_id"`
+	DirId   int    `gorm:"column:descendant_id"`
 	DirName string `gorm:"column:dir_name"`
 }
 
 func GetDirsUnderDir(userId, dirId int) []GetDirContentResult {
 	var results []GetDirContentResult
-	sql1 := "select descendant_id, dir_name from directory_path left join directory on directory_path.ancestor_id = directory.dir_id where user_id = ? and ancestor_id = ? and depth = 1"
+	sql1 := "select descendant_id, dir_name from directory_path left join directory on directory_path.descendant_id = directory.dir_id where user_id = ? and ancestor_id = ? and depth = 1"
 	if err := DB.Raw(sql1, userId, dirId).Scan(&results).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil
@@ -254,4 +257,16 @@ func GetDirsUnderDir(userId, dirId int) []GetDirContentResult {
 		}
 	}
 	return results
+}
+
+func GetRootDir(userId int) *Directory {
+	var dir Directory
+	if err := DB.Where("user_id = ? and is_root = ?", userId, true).First(&dir).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil
+		} else {
+			panic(err)
+		}
+	}
+	return &dir
 }

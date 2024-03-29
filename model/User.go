@@ -2,12 +2,16 @@ package model
 
 import (
 	"MedicalLowCode-backend/util"
+	"database/sql"
 	"gorm.io/gorm"
+	"os"
+	"path/filepath"
+	"strconv"
 	"time"
 )
 
 type User struct {
-	UserId       int
+	UserId       int `gorm:"primaryKey;autoIncrement"`
 	UserName     string
 	UserPassword string
 	UserEmail    string
@@ -84,6 +88,39 @@ func RegisterNewUser(userEmail string, userName string, userPassword string) {
 	result := DB.Select("user_name", "user_password", "user_email").Create(&user)
 	if result.Error != nil {
 		panic(result.Error)
+	}
+	//创建用户根目录
+	dir := Directory{
+		UserId:  user.UserId,
+		DirName: "user_" + strconv.Itoa(user.UserId),
+		IsRoot:  true,
+	}
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		//sql1
+		if err := tx.Create(&dir).Error; err != nil {
+			return err
+		}
+		//sql2
+		insertPathSql := "insert into directory_path (ancestor_id, descendant_id, depth) values (@newDirId, @newDirId, 0)"
+		if err := tx.Exec(insertPathSql, sql.Named("newDirId", dir.DirId)).Error; err != nil {
+			return err
+		}
+		//检查目录是否存在
+		targetDirPath := filepath.Join(RootDirPath, dir.DirName)
+		if _, err := os.Stat(targetDirPath); os.IsNotExist(err) {
+			// 使用 MkdirAll 函数递归创建目录
+			if err := os.MkdirAll(targetDirPath, os.ModePerm); err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		} else {
+			return os.ErrExist
+		}
+		return nil
+	})
+	if err != nil {
+		panic(err)
 	}
 }
 
