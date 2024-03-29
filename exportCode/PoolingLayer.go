@@ -1,4 +1,4 @@
-package layer
+package exportCode
 
 type MaxPool1d struct {
 	KernelSize    int
@@ -92,6 +92,6 @@ func GeneratePoolingLayer(node *CNode) Layer {
 	case "AvgPool3d":
 		return RawData2Layer(&AvgPool3d{}, node.Data.(map[string]any))
 	default:
-		panic("unknown layer type")
+		panic("unknown exportCode type")
 	}
 }

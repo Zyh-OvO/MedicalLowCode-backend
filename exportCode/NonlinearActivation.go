@@ -1,4 +1,4 @@
-package layer
+package exportCode
 
 type ELU struct {
 	Alpha   *float64 `default:"1.0"`
@@ -288,6 +288,6 @@ func GenerateNonlinearActivation(node *CNode) Layer {
 	case "LogSoftmax":
 		return RawData2Layer(&LogSoftmax{}, node.Data.(map[string]any))
 	default:
-		panic("unknown layer type")
+		panic("unknown exportCode type")
 	}
 }

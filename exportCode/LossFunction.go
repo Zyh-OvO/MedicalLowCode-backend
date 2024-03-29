@@ -1,4 +1,4 @@
-package layer
+package exportCode
 
 type L1Loss struct {
 	SizeAverage *bool   `default:"true"`
@@ -55,6 +55,6 @@ func GenerateLossFunction(node *CNode) Layer {
 	case "BCELoss":
 		return RawData2Layer(&BCELoss{}, node.Data.(map[string]any))
 	default:
-		panic("unknown layer type")
+		panic("unknown exportCode type")
 	}
 }

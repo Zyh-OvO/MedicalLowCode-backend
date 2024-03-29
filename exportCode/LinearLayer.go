@@ -1,4 +1,4 @@
-package layer
+package exportCode
 
 type Linear struct {
 	InFeatures  int
@@ -39,6 +39,6 @@ func GenerateLinearLayer(node *CNode) Layer {
 	case "LazyLinear":
 		return RawData2Layer(&LazyLinear{}, node.Data.(map[string]any))
 	default:
-		panic("unknown layer type")
+		panic("unknown exportCode type")
 	}
 }

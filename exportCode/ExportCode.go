@@ -1,4 +1,4 @@
-package layer
+package exportCode
 
 import (
 	"errors"
@@ -6,15 +6,31 @@ import (
 )
 
 func ExportCode(canvasContent string) string {
-	graph := RecoverGraph(canvasContent)
-	code, err := generateCode(graph)
+	//数据处理代码
+	dataCode, err := genDataCode()
 	if err != nil {
 		panic(err)
 	}
-	return code
+	//网络代码
+	graph := RecoverGraph(canvasContent)
+	netCode, err := genNetCode(graph)
+	if err != nil {
+		panic(err)
+	}
+	//训练代码
+	trainCode, err := genTrainCode()
+	if err != nil {
+		panic(err)
+	}
+	return dataCode + netCode + trainCode
 }
 
-func generateCode(graph goraph.Graph) (string, error) {
+func genDataCode() (string, error) {
+	//todo
+	return "", nil
+}
+
+func genNetCode(graph goraph.Graph) (string, error) {
 	var code string
 	topologicalNodes, ok := TopologicalSort(graph)
 	if !ok {
@@ -44,4 +60,9 @@ func generateCode(graph goraph.Graph) (string, error) {
 	}
 	code += "        return " + topologicalNodes[len(topologicalNodes)-1].OutputName + "\n"
 	return code, nil
+}
+
+func genTrainCode() (string, error) {
+	//todo
+	return "", nil
 }

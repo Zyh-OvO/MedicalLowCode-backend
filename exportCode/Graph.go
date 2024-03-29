@@ -1,4 +1,4 @@
-package layer
+package exportCode
 
 import (
 	"MedicalLowCode-backend/util"
@@ -48,7 +48,7 @@ func (node *CNode) GenerateLayer(index int) {
 	case "MaxPool1d", "MaxPool2d", "MaxPool3d", "AvgPool1d", "AvgPool2d", "AvgPool3d":
 		node.Layer = GeneratePoolingLayer(node)
 	default:
-		panic("unsupported layer type")
+		panic("unsupported exportCode type")
 	}
 	node.LayerName = node.Type + "_" + strconv.Itoa(index)
 	node.OutputName = node.LayerName + "_output"

@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"mime/multipart"
 	"net/http"
+	"path/filepath"
 	"strconv"
 )
 
@@ -39,10 +40,59 @@ type renameFileJson struct {
 	FileName string `json:"fileName" binding:"required"`
 }
 
-func (f FileManageController) GetFileTree(c *gin.Context) {
+type getDirContentJson struct {
+	DirId string `json:"dirId" binding:"required"`
+}
+
+type retFile struct {
+	FileId   string `json:"fileId"`
+	FileName string `json:"fileName"`
+	Path     string `json:"path"`
+}
+
+type retDir struct {
+	DirId   string `json:"dirId"`
+	DirName string `json:"dirName"`
+	Path    string `json:"path"`
+}
+
+func (f FileManageController) GetDirContent(c *gin.Context) {
 	token := c.MustGet("token").(*util.Token)
-	fileTree := model.GetFileTree(token.UserId)
-	c.JSON(http.StatusOK, fileTree)
+	var json getDirContentJson
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	dirId, _ := strconv.Atoi(json.DirId)
+	parentDirPath, err := model.QueryDirPath(token.UserId, dirId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	dirs := model.GetDirsUnderDir(token.UserId, dirId)
+	files := model.GetFilesUnderDir(token.UserId, dirId)
+	dirContent := make(map[string]interface{})
+	var retDirs []retDir
+	var retFiles []retFile
+	for _, dir := range dirs {
+		dirPath := filepath.Join(parentDirPath, dir.DirName)
+		retDirs = append(retDirs, retDir{
+			DirId:   strconv.Itoa(dir.DirId),
+			DirName: dir.DirName,
+			Path:    dirPath,
+		})
+	}
+	for _, file := range files {
+		filePath := filepath.Join(parentDirPath, file.FileName)
+		retFiles = append(retFiles, retFile{
+			FileId:   strconv.Itoa(file.FileId),
+			FileName: file.FileName,
+			Path:     filePath,
+		})
+	}
+	dirContent["dirs"] = retDirs
+	dirContent["files"] = retFiles
+	c.JSON(http.StatusOK, dirContent)
 }
 
 func (f FileManageController) UploadFile(c *gin.Context) {

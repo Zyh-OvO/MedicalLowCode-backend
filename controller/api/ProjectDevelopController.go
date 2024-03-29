@@ -1,9 +1,9 @@
 package api
 
 import (
+	"MedicalLowCode-backend/exportCode"
 	"MedicalLowCode-backend/model"
 	"MedicalLowCode-backend/util"
-	"MedicalLowCode-backend/util/layer"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/ssh"
@@ -40,7 +40,7 @@ func (p ProjectDevelopController) ExportCode(c *gin.Context) {
 		c.JSON(http.StatusNotAcceptable, gin.H{"error": "项目不存在"})
 		return
 	}
-	code := layer.ExportCode(canvas.CanvasContent)
+	code := exportCode.ExportCode(canvas.CanvasContent)
 	fmt.Println(code)
 	c.JSON(http.StatusOK, gin.H{
 		"code": code,
@@ -61,7 +61,7 @@ func (p ProjectDevelopController) SubmitTrainingTask(c *gin.Context) {
 		return
 	}
 	//todo
-	code := layer.ExportCode(canvas.CanvasContent)
+	code := exportCode.ExportCode(canvas.CanvasContent)
 	//ssh
 	vpnCmd1 := exec.Command("sh", "-c", "~/lowcode/actvpn.sh")
 	err := vpnCmd1.Run()

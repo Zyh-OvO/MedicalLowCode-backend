@@ -1,4 +1,4 @@
-package layer
+package exportCode
 
 type Conv1d struct {
 	InChannels  int
@@ -57,6 +57,6 @@ func GenerateConvLayer(node *CNode) Layer {
 	case "Conv3d":
 		return RawData2Layer(&Conv3d{}, node.Data.(map[string]any))
 	default:
-		panic("unknown layer type")
+		panic("unknown exportCode type")
 	}
 }

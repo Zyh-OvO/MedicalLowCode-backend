@@ -226,6 +226,32 @@ func RenameFile(userId, fileId int, fileName string) {
 	}
 }
 
-func GetFileTree(userId int) string {
-	//todo
+func GetFilesUnderDir(userId, dirId int) []File {
+	var files []File
+	if err := DB.Where("user_id = ? and dir_id = ?", userId, dirId).Find(&files).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil
+		} else {
+			panic(err)
+		}
+	}
+	return files
+}
+
+type GetDirContentResult struct {
+	DirId   int    `gorm:"column:dir_id"`
+	DirName string `gorm:"column:dir_name"`
+}
+
+func GetDirsUnderDir(userId, dirId int) []GetDirContentResult {
+	var results []GetDirContentResult
+	sql1 := "select descendant_id, dir_name from directory_path left join directory on directory_path.ancestor_id = directory.dir_id where user_id = ? and ancestor_id = ? and depth = 1"
+	if err := DB.Raw(sql1, userId, dirId).Scan(&results).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil
+		} else {
+			panic(err)
+		}
+	}
+	return results
 }

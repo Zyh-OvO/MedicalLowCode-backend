@@ -95,7 +95,7 @@ func defaultModuleManageRouterInit(router *gin.RouterGroup) {
 func fileManageRouterInit(router *gin.RouterGroup) {
 	fileManageRouter := router.Group("/fileManage")
 	fileManageRouter.Use(CheckToken)
-	fileManageRouter.POST("/getFileTree", api.FileManageController{}.GetFileTree)
+	fileManageRouter.POST("/getDirContent", api.FileManageController{}.GetDirContent)
 	fileManageRouter.POST("/uploadFile", api.FileManageController{}.UploadFile)
 	fileManageRouter.POST("/deleteFile", api.FileManageController{}.DeleteFile)
 	fileManageRouter.POST("/renameFile", api.FileManageController{}.RenameFile)
