@@ -74,6 +74,12 @@ func ApiRouterInit(router *gin.Engine) {
 	projectDevelopRouterInit(apiRouter)
 	defaultModuleManageRouterInit(apiRouter)
 	defaultDataManageRouterInit(apiRouter)
+	websocketRouterInit(apiRouter)
+}
+
+func websocketRouterInit(router *gin.RouterGroup) {
+	websocketRouter := router.Group("/ws")
+	websocketRouter.GET("/inference", api.DefaultModelController{}.WebsocketHandler)
 }
 
 func userRouterInit(router *gin.RouterGroup) {
@@ -124,7 +130,7 @@ func defaultModuleManageRouterInit(router *gin.RouterGroup) {
 	defaultModuleManageRouter := router.Group("/defaultModule")
 	defaultModuleManageRouter.Use(CheckCornerStoneToken)
 	defaultModuleManageRouter.POST("/imageTest", api.DefaultModelController{}.ImageTest)
-	defaultModuleManageRouter.POST("/niiTest", api.DefaultModelController{}.NiiTest)
+	defaultModuleManageRouter.POST("/niiTest", api.DefaultModelController{}.UploadNiiGzFile)
 	defaultModuleManageRouter.POST("/getImages", api.DefaultModelController{}.ReturnMultipleImages)
 	defaultModuleManageRouter.GET("/returnNiiGzFile/:token/:id", api.DefaultModelController{}.ReturnNiiGzFile)
 	defaultModuleManageRouter.GET("/returnSegFile", api.DefaultModelController{}.ReturnSegFile)
