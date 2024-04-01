@@ -1,0 +1,43 @@
+[
+  {
+    "location": "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task01_BrainTumour",
+    "name": "BRATS",
+    "description": "Gliomas segmentation tumour and oedema in on brain images",
+    "reference": "https://www.med.upenn.edu/sbia/brats2017.html",
+    "licence": "CC-BY-SA 4.0",
+    "release": "2.0 04/05/2018",
+    "tensorImageSize": "4D",
+    "modality": {
+      "0": "FLAIR",
+      "1": "T1w",
+      "2": "t1gd",
+      "3": "T2w"
+    },
+    "labels": {
+      "0": "background",
+      "1": "edema",
+      "2": "non-enhancing tumor",
+      "3": "enhancing tumour"
+    },
+    "numTraining": 484,
+    "numTest": 266
+  },
+  {
+    "location": "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung",
+    "name": "Lung",
+    "description": "Lung and cancer segmentation",
+    "reference": "The Cancer Imaging Archive",
+    "licence": "CC-BY-SA 4.0",
+    "relase": "1.0 04/05/2018",
+    "tensorImageSize": "3D",
+    "modality": {
+      "0": "CT"
+    },
+    "labels": {
+      "0": "background",
+      "1": "cancer"
+    },
+    "numTraining": 63,
+    "numTest": 32
+  }
+]

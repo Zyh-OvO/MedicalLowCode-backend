@@ -3,6 +3,7 @@ package router
 import (
 	"MedicalLowCode-backend/controller/api"
 	"MedicalLowCode-backend/util"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -26,6 +27,44 @@ func CheckToken(c *gin.Context) {
 	}
 }
 
+func CheckCornerStoneToken(c *gin.Context) {
+	tk := c.Query("token")
+	if tk == "" || tk == "null" {
+		tk = c.Param("token")
+		fmt.Println("param_token:", tk)
+	}
+	if tk == "" || tk == "null" || tk == "111" {
+		tk = c.Request.Header.Get("token")
+		if tk == "" {
+			//	c.JSON(http.StatusUnauthorized, gin.H{})
+			//	c.Abort()
+			//	return
+			// TODO: implement real token
+			token, err := util.GiveStaticToken()
+			if err != nil {
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error": err.Error(),
+				})
+				c.Abort()
+			} else {
+				c.Set("token", token)
+				c.Next()
+				fmt.Println("token acquired")
+			}
+		}
+	}
+	token, err := util.ParseToken(tk)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": err.Error(),
+		})
+		c.Abort()
+	} else {
+		c.Set("token", token)
+		c.Next()
+	}
+}
+
 func ApiRouterInit(router *gin.Engine) {
 	apiRouter := router.Group("/api")
 	userRouterInit(apiRouter)
@@ -35,6 +74,7 @@ func ApiRouterInit(router *gin.Engine) {
 	projectDevelopRouterInit(apiRouter)
 	defaultModuleManageRouterInit(apiRouter)
 	fileManageRouterInit(apiRouter)
+	defaultDataManageRouterInit(apiRouter)
 }
 
 func userRouterInit(router *gin.RouterGroup) {
@@ -83,13 +123,20 @@ func projectDevelopRouterInit(router *gin.RouterGroup) {
 
 func defaultModuleManageRouterInit(router *gin.RouterGroup) {
 	defaultModuleManageRouter := router.Group("/defaultModule")
-	defaultModuleManageRouter.POST("/imageTest", api.CtModelController{}.ImageTest)
-	defaultModuleManageRouter.POST("/niiTest", api.CtModelController{}.NiiTest)
-	defaultModuleManageRouter.POST("/getImages", api.CtModelController{}.ReturnMultipleImages)
-	defaultModuleManageRouter.GET("/returnNiiGzFile", api.CtModelController{}.ReturnNiiGzFile)
-	defaultModuleManageRouter.GET("/returnSegFile", api.CtModelController{}.ReturnSegFile)
-	defaultModuleManageRouter.GET("/returnSegData", api.CtModelController{}.GetNoneZeroLocation)
-	defaultModuleManageRouter.GET("/getDim", api.CtModelController{}.DimTest)
+	defaultModuleManageRouter.Use(CheckCornerStoneToken)
+	defaultModuleManageRouter.POST("/imageTest", api.DefaultModelController{}.ImageTest)
+	defaultModuleManageRouter.POST("/niiTest", api.DefaultModelController{}.NiiTest)
+	defaultModuleManageRouter.POST("/getImages", api.DefaultModelController{}.ReturnMultipleImages)
+	defaultModuleManageRouter.GET("/returnNiiGzFile/:token/:id", api.DefaultModelController{}.ReturnNiiGzFile)
+	defaultModuleManageRouter.GET("/returnSegFile", api.DefaultModelController{}.ReturnSegFile)
+	defaultModuleManageRouter.GET("/returnSegData", api.DefaultModelController{}.GetNoneZeroLocation)
+	defaultModuleManageRouter.GET("/getDim", api.DefaultModelController{}.DimTest)
+}
+
+func defaultDataManageRouterInit(router *gin.RouterGroup) {
+	defaultDataManageRouter := router.Group("/defaultData")
+	defaultDataManageRouter.POST("/getAllDataSet", api.DefaultDataController{}.GetAllDataSet)
+	defaultDataManageRouter.POST("/getOneDataSet", api.DefaultDataController{}.GetOneDataSet)
 }
 
 func fileManageRouterInit(router *gin.RouterGroup) {
