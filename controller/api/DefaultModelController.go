@@ -4,6 +4,7 @@ import (
 	"MedicalLowCode-backend/model"
 	"MedicalLowCode-backend/util"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/KyungWonPark/nifti"
 	"github.com/gin-gonic/gin"
@@ -30,6 +31,19 @@ const env = "/opt/miniconda3/etc/profile.d/conda.sh"
 type DefaultModelController struct {
 }
 
+type InitMessage struct {
+	FileId  int    `json:"fileId"`
+	Token   string `json:"token"`
+	ModelId int    `json:"modelId"`
+}
+
+type InferenceProgress struct {
+	Progress      float32 `json:"progress"`
+	PassedTime    string  `json:"passedTime"`
+	RemainingTime string  `json:"remainingTime"`
+	Status        string  `json:"status"`
+}
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -46,6 +60,11 @@ func (u DefaultModelController) WebsocketHandler(c *gin.Context) {
 	}
 	defer conn.Close()
 
+	flag := false
+	var fileId int
+	var userId int
+	var modelId int
+
 	for {
 		// 读取客户端发送的消息
 		_, p, err := conn.ReadMessage()
@@ -55,12 +74,49 @@ func (u DefaultModelController) WebsocketHandler(c *gin.Context) {
 		}
 		// 处理消息
 		fmt.Printf("Received message: %s\n", p)
+		if !flag {
+			// 解析JSON字符串到map
+			var message InitMessage
+			if err := json.Unmarshal([]byte(p), &message); err != nil {
+				fmt.Println("解析JSON失败:", err)
+				return
+			}
 
-		// 回复客户端消息
-		if err := conn.WriteMessage(websocket.TextMessage, p); err != nil {
-			fmt.Println("Error writing message:", err)
-			break
+			// 获得解析后的字段值
+			fileId = message.FileId
+			// TODO:token判断不是很优雅
+			token, err := util.ParseToken(message.Token)
+			if err != nil {
+				token, _ = util.GiveStaticToken()
+			}
+			userId = token.UserId
+			modelId = message.ModelId
+
+			go WatchInferenceProgress(fileId, userId, modelId, conn)
+
+			// 将 Message 结构体实例序列化为 JSON 字符串
+			jsonData, err := json.Marshal(message)
+			if err != nil {
+				fmt.Println("Error marshalling JSON:", err)
+				break
+			}
+
+			// 发送 JSON 字符串给客户端
+			if err := conn.WriteMessage(websocket.TextMessage, jsonData); err != nil {
+				fmt.Println("Error writing message:", err)
+				break
+			}
+
+			flag = true
 		}
+
+		//if ()
+		//go WatchInferenceProgress(fileId, userId, modelId)
+		// 回复客户端消息
+		//if err := conn.WriteMessage(websocket.TextMessage, p); err != nil {
+		//	fmt.Println("Error writing message:", err)
+		//	break
+		//}
 	}
 }
 
@@ -98,7 +154,7 @@ func (u DefaultModelController) UploadNiiGzFile(c *gin.Context) {
 	}
 
 	// 加入数据库操作
-	// TODO:文件名重复？
+	// TODO:文件名重复？现在是当新文件处理
 	inferenceFile := model.AddNnunetInferenceFile(token.UserId, modelId, name, filePath+name)
 
 	// 在本地创建一个同名的文件
@@ -216,7 +272,7 @@ func (u DefaultModelController) ReturnNiiGzFile(c *gin.Context) {
 
 	c.Data(http.StatusOK, "application/octet-stream", data)
 
-	go WatchInferenceProgress(inferenceFile.Id, inferenceFile.UserId, inferenceFile.ModelId)
+	//go WatchInferenceProgress(inferenceFile.Id, inferenceFile.UserId, inferenceFile.ModelId)
 
 	// 删除已经查看的临时文件
 	//os.Remove(filePath)
@@ -350,7 +406,7 @@ func PreprocessAndInferenceNiiGzFile(filePath string, inputFolder string, modelI
 	InferenceNiiGzFile(filePath, inputFolder, modelId, idSlice, nameSlice)
 }
 
-func WatchInferenceProgress(id int, userId int, modelId int) {
+func WatchInferenceProgress(id int, userId int, modelId int, conn *websocket.Conn) {
 	inputFolder := viewNiiGz + strconv.Itoa(userId) + "/" + strconv.Itoa(modelId) + "/" + strconv.Itoa(id) + "_input/"
 	filePath := inputFolder + outputLog
 	t, err := tail.TailFile(filePath, tail.Config{
@@ -365,9 +421,75 @@ func WatchInferenceProgress(id int, userId int, modelId int) {
 	}
 	defer t.Cleanup()
 
+	totalFiles := 0
+	//var nowFile int
+
 	// 循环处理文件内容
 	for line := range t.Lines {
 		// 输出文件内容
 		log.Println(line.Text)
+		str := line.Text
+		if strings.HasPrefix(str, "startSGSGSG:") { // 推断开始
+			// 提取后续子字符串
+			startIndex := len("startSGSGSG:")
+			totalFiles, _ = strconv.Atoi(str[startIndex:])
+		} else if str == "finishedSGSGSG" {
+			var progress InferenceProgress
+			progress.Status = "finished"
+			jsonData, err := json.Marshal(progress)
+			if err != nil {
+				fmt.Println("Error marshalling JSON:", err)
+				break
+			}
+			if err := conn.WriteMessage(websocket.TextMessage, jsonData); err != nil {
+				fmt.Println("Error writing message:", err)
+				break
+			}
+		} else if totalFiles == 1 && strings.HasPrefix(str, "infile:") { // 单个文件的推断任务
+			progress := ParseProgressLine(str, "infile:")
+			jsonData, err := json.Marshal(progress)
+			if err != nil {
+				fmt.Println("Error marshalling JSON:", err)
+				break
+			}
+			if err := conn.WriteMessage(websocket.TextMessage, jsonData); err != nil {
+				fmt.Println("Error writing message:", err)
+				break
+			}
+		} else if totalFiles > 1 && strings.HasPrefix(str, "inlist:") { // 多个文件的推断任务
+			progress := ParseProgressLine(str, "inlist:")
+			jsonData, err := json.Marshal(progress)
+			if err != nil {
+				fmt.Println("Error marshalling JSON:", err)
+				break
+			}
+			if err := conn.WriteMessage(websocket.TextMessage, jsonData); err != nil {
+				fmt.Println("Error writing message:", err)
+				break
+			}
+		}
 	}
+}
+
+func ParseProgressLine(str string, prefix string) InferenceProgress {
+	var proress InferenceProgress
+	proress.Status = "inferencing"
+	_, s1, _ := strings.Cut(str, prefix)
+	progressSlice := strings.Split(s1, "/")
+	f, _ := strconv.ParseFloat(progressSlice[0], 32)
+	proress.Progress = float32(f) * 100
+	secondsF, _ := strconv.ParseFloat(progressSlice[1], 32)
+	seconds := int(secondsF + 0.5)
+	hours := seconds / 3600          // 小时数
+	minutes := (seconds % 3600) / 60 // 分钟数
+	seconds = seconds % 60           // 剩余的秒数
+	proress.PassedTime = fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+	secondsF, _ = strconv.ParseFloat(progressSlice[2], 32)
+	seconds = int(secondsF + 0.5)
+	hours = seconds / 3600          // 小时数
+	minutes = (seconds % 3600) / 60 // 分钟数
+	seconds = seconds % 60          // 剩余的秒数
+	proress.RemainingTime = fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+	fmt.Println(proress)
+	return proress
 }

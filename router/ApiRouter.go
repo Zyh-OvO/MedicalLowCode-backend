@@ -49,7 +49,7 @@ func CheckCornerStoneToken(c *gin.Context) {
 			} else {
 				c.Set("token", token)
 				c.Next()
-				fmt.Println("token acquired")
+				fmt.Println("token acquired1")
 			}
 		}
 	}
@@ -62,6 +62,7 @@ func CheckCornerStoneToken(c *gin.Context) {
 	} else {
 		c.Set("token", token)
 		c.Next()
+		fmt.Println("token acquired2")
 	}
 }
 
