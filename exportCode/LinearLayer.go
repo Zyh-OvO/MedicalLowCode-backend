@@ -1,5 +1,7 @@
 package exportCode
 
+var LinearLayerKinds = []string{"Linear", "Bilinear", "LazyLinear"}
+
 type Linear struct {
 	InFeatures  int
 	OutFeatures int

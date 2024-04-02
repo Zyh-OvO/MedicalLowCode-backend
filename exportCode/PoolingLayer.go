@@ -1,5 +1,7 @@
 package exportCode
 
+var PoolingLayerKinds = []string{"MaxPool1d", "MaxPool2d", "MaxPool3d", "AvgPool1d", "AvgPool2d", "AvgPool3d"}
+
 type MaxPool1d struct {
 	KernelSize    int
 	Stride        int

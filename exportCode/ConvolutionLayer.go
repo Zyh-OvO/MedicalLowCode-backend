@@ -1,5 +1,7 @@
 package exportCode
 
+var ConvolutionLayerKinds = []string{"Conv1d", "Conv2d", "Conv3d"}
+
 type Conv1d struct {
 	InChannels  int
 	OutChannels int

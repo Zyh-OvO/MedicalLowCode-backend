@@ -1,5 +1,7 @@
 package exportCode
 
+var LossFunctionKinds = []string{"L1Loss", "MSELoss", "CrossEntropyLoss", "BCELoss"}
+
 type L1Loss struct {
 	SizeAverage *bool   `default:"true"`
 	Reduce      *bool   `default:"true"`

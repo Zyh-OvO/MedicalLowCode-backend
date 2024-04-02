@@ -24,11 +24,10 @@ func RawData2Layer(layer Layer, rawData map[string]any) Layer {
 	return layer
 }
 
-func Layer2Code(layer Layer, layerVarName string) string {
+func Layer2Code(layer Layer) string {
 	layerValue := reflect.ValueOf(layer).Elem()
 	layerType := layerValue.Type()
-	layerTypeName := layerType.Name()
-	code := "self." + layerVarName + " = nn." + layerTypeName + "("
+	var code string
 	for i := 0; i < layerValue.NumField(); i++ {
 		field := layerValue.Field(i)
 		switch field.Kind() {
@@ -72,6 +71,5 @@ func Layer2Code(layer Layer, layerVarName string) string {
 			code += util.CamelCaseToSnakeCase(layerType.Field(i).Name) + "=" + fmt.Sprintf("%v", value) + ", "
 		}
 	}
-	code += ")"
 	return code
 }

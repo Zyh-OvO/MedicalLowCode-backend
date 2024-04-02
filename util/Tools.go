@@ -182,6 +182,15 @@ func GetSSHConfig() (*ssh.ClientConfig, error) {
 	return config, nil
 }
 
+func SliceContains(slice []string, element string) bool {
+	for _, e := range slice {
+		if e == element {
+			return true
+		}
+	}
+	return false
+}
+
 func GiveStaticToken() (*Token, error) {
 	token := &Token{
 		UserId:    0,

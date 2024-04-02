@@ -1,5 +1,7 @@
 package exportCode
 
+var NonlinearActivationKinds = []string{"ELU", "Hardshrink", "Hardsigmoid", "Hardtanh", "Hardswish", "LeakyReLU", "LogSigmoid", "PReLU", "ReLU", "ReLU6", "RReLU", "SELU", "CELU", "GELU", "Sigmoid", "SiLU", "Mish", "Softplus", "Softshrink", "Softsign", "Tanh", "Tanhshrink", "Threshold", "GLU", "Softmin", "Softmax", "Softmax2d", "LogSoftmax"}
+
 type ELU struct {
 	Alpha   *float64 `default:"1.0"`
 	Inplace *bool    `default:"false"`
