@@ -64,9 +64,9 @@ func (node *CNode) GenerateLayer() {
 func (node *CNode) GenerateDatasetCode() string {
 	var code string
 	switch node.Layer.(type) {
-	//目前只有Dataset
-	case *Dataset:
-		dataset := node.Layer.(*Dataset)
+	//目前只有TrainDataset和ReasoningDataset
+	case *TrainDataset:
+		dataset := node.Layer.(*TrainDataset)
 		code += "class CustomDataset(Dataset):\n"
 		code += "    def __init__(self, data_file, label_file):\n"
 		code += "        self.data = pd.read_csv(data_file)\n"
@@ -81,6 +81,10 @@ func (node *CNode) GenerateDatasetCode() string {
 		code += "train_loader = DataLoader(train_dataset, batch_size=" + strconv.Itoa(dataset.BatchSize) + ", shuffle=" + strings.Title(strconv.FormatBool(dataset.Shuffle)) + ")\n"
 		code += "test_dataset = CustomDataset('" + dataset.TestDataFilePath + "', '" + dataset.TestLabelFilePath + "')\n"
 		code += "test_loader = DataLoader(test_dataset, batch_size=" + strconv.Itoa(dataset.BatchSize) + ", shuffle=" + strings.Title(strconv.FormatBool(dataset.Shuffle)) + ")\n"
+	case *ReasoningDataset:
+		code += "reasoning_data_file = '" + node.Layer.(*ReasoningDataset).ReasoningDataFilePath + "'\n"
+		code += "reasoning_data = pd.read_csv(reasoning_data_file)\n"
+		code += "reasoning_data = torch.from_numpy(reasoning_data.values.astype(float))\n"
 	}
 	return code
 }
@@ -107,6 +111,14 @@ func (node *CNode) GenerateTrainCode() string {
 	var code string
 	nodeType := node.Type
 	switch {
+	case util.SliceContains(OptimizerKinds, nodeType):
+		code += "optimizer = optim." + reflect.TypeOf(node.Layer).Name() + "(model.parameters(), "
+		code += Layer2Code(node.Layer)
+		code += ")\n"
+	case util.SliceContains(LossFunctionKinds, nodeType):
+		code += "criterion = nn." + reflect.TypeOf(node.Layer).Name() + "("
+		code += Layer2Code(node.Layer)
+		code += ")\n"
 	case nodeType == "TrainLayer":
 		trainLayer := node.Layer.(*TrainLayer)
 		code += "num_epochs = " + strconv.Itoa(trainLayer.NumEpochs) + "\n"
@@ -142,14 +154,18 @@ func (node *CNode) GenerateTrainCode() string {
 		code += "        correct += (predicted == labels).sum().item()\n"
 		code += "accuracy = correct / total\n"
 		code += "print(f'Test Accuracy: {accuracy * 100}%')\n"
-	case util.SliceContains(OptimizerKinds, nodeType):
-		code += "optimizer = optim." + reflect.TypeOf(node.Layer).Name() + "(model.parameters(), "
-		code += Layer2Code(node.Layer)
-		code += ")\n"
-	case util.SliceContains(LossFunctionKinds, nodeType):
-		code += "criterion = nn." + reflect.TypeOf(node.Layer).Name() + "("
-		code += Layer2Code(node.Layer)
-		code += ")\n"
+	case nodeType == "ReasoningLayer":
+		reasoningLayer := node.Layer.(*ReasoningLayer)
+		code += "params_file_path = '" + reasoningLayer.ParamsFilePath + "'\n"
+		code += "save_result_dir_path = '" + reasoningLayer.SaveResultDirPath + "'\n"
+		code += "model.load_state_dict(torch.load(params_file_path))\n"
+		code += "model.eval()\n"
+		code += "with torch.no_grad():\n"
+		code += "    reasoning_result = model(reasoning_data)\n"
+		//保存到csv
+		code += "reasoning_result = reasoning_result.numpy()\n"
+		code += "reasoning_result = pd.DataFrame(reasoning_result)\n"
+		code += "reasoning_result.to_csv(save_result_dir_path, index=False)\n"
 	}
 	return code
 }

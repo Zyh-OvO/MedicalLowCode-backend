@@ -47,7 +47,7 @@ func (p ProjectDevelopController) ExportCode(c *gin.Context) {
 	})
 }
 
-func (p ProjectDevelopController) SubmitTrainingTask(c *gin.Context) {
+func (p ProjectDevelopController) SubmitTask(c *gin.Context) {
 	token := c.MustGet("token").(*util.Token)
 	var json submitTrainingTaskJson
 	if err := c.ShouldBindJSON(&json); err != nil {

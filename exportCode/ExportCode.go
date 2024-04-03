@@ -19,12 +19,20 @@ func ExportCode(canvasContent string) string {
 	if err != nil {
 		panic(err)
 	}
-	//训练代码
+	//训练或推理代码
 	trainCode, err := genTrainCode(trainGraph)
 	if err != nil {
 		panic(err)
 	}
-	return dataCode + netCode + trainCode
+	//包导入代码
+	var importCode string
+	importCode += "import torch\n"
+	importCode += "import torch.nn as nn\n"
+	importCode += "import torch.optim as optim\n"
+	importCode += "from torch.utils.data import Dataset, DataLoader\n"
+	importCode += "import numpy as np\n"
+	importCode += "import pandas as pd\n"
+	return importCode + dataCode + netCode + trainCode
 }
 
 func genDataCode(graph goraph.Graph) (string, error) {
@@ -62,7 +70,6 @@ func genNetCode(graph goraph.Graph) (string, error) {
 		forwardCodes = append(forwardCodes, forwardCode)
 	}
 	//生成整个网络的代码
-	code += "import torch.nn as nn\n\n"
 	code += "class Net(nn.Module):\n"
 	code += "    def __init__(self):\n"
 	code += "        super().__init__()\n"

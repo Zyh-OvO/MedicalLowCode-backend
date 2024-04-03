@@ -124,8 +124,8 @@ func projectDevelopRouterInit(router *gin.RouterGroup) {
 	projectDevelopRouter := router.Group("/projectDevelop")
 	projectDevelopRouter.Use(CheckToken)
 	projectDevelopRouter.POST("/exportCode", api.ProjectDevelopController{}.ExportCode)
-	projectDevelopRouter.POST("/submitTrainingTask", api.ProjectDevelopController{}.SubmitTrainingTask)
-	projectDevelopRouter.POST("/submitReasoningTask", api.ProjectDevelopController{}.SubmitReasoningTask)
+	projectDevelopRouter.POST("/submitTrainingTask", api.ProjectDevelopController{}.SubmitTask)
+	//projectDevelopRouter.POST("/submitReasoningTask", api.ProjectDevelopController{}.SubmitReasoningTask)
 }
 
 func defaultModuleManageRouterInit(router *gin.RouterGroup) {
