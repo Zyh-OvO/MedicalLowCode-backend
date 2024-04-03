@@ -395,12 +395,60 @@ func PreprocessNiiGzFile(filePath string, inputFolder string, modelId int, IdSli
 				return
 			}
 		}
-		model.SetNnunetInferenceFilePreprocess(IdSlice)
 	} else {
 		//	TODO:多channel分开
+		for i := 0; i < len(NameSlice); i++ {
+			srcFile := filePath + NameSlice[i]
+
+			SplitNiiGFile(srcFile, NameSlice[i], channel, inputFolder)
+			//inputFileName := strings.ReplaceAll(NameSlice[i], fileEnding, "") + "_0000" + fileEnding
+			//fmt.Println("inputFileName:" + inputFileName)
+			//destFile, err := os.Create(inputFolder + inputFileName)
+			//if err != nil {
+			//	fmt.Println("Error creating destination file:", err)
+			//	return
+			//}
+			//defer destFile.Close()
+			//_, err = io.Copy(destFile, srcFile)
+			//if err != nil {
+			//	fmt.Println("Error copying file:", err)
+			//	return
+			//}
+		}
 	}
 
+	model.SetNnunetInferenceFilePreprocess(IdSlice)
+
 	fmt.Println("File copied and renamed successfully.")
+}
+
+func SplitNiiGFile(srcFile string, fileName string, modelChannel int, inputFolder string) {
+	nifti1Image := nifti.Nifti1Image{}
+	nifti1Image.LoadImage(srcFile, true)
+	dims := nifti1Image.GetDims()
+	channels := nifti1Image.GetDims()[3]
+	if channels == modelChannel {
+		for i := 0; i < modelChannel; i++ {
+			img := nifti.NewImg(dims[0], dims[1], dims[2], 1)
+			img.SetNewHeader(nifti1Image.GetHeader())
+			img.SetHeaderDim2(dims[0], dims[1], dims[2], 1)
+			for z := 0; z < dims[2]; z++ {
+				for y := 0; y < dims[1]; y++ {
+					for x := 0; x < dims[0]; x++ {
+						value := nifti1Image.GetAt(uint32(x), uint32(y), uint32(z), uint32(i))
+						img.SetAt(uint32(x), uint32(y), uint32(z), 0, value)
+
+					}
+				}
+			}
+			fileName, _ = strings.CutSuffix(fileName, ".nii.gz")
+			inputFileName := fileName + fmt.Sprintf("_%04d", i) + ".nii"
+			img.Save(inputFolder + inputFileName)
+		}
+	} else {
+		panic("Wrong srcFile dims!")
+		//	TODO: file与model维数不匹配报错
+	}
 }
 
 func InferenceNiiGzFile(filePath string, inputFolder string, modelId int, idSlice []int, nameSlice []string) {
