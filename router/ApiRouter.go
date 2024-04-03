@@ -135,7 +135,7 @@ func defaultModuleManageRouterInit(router *gin.RouterGroup) {
 	defaultModuleManageRouter.POST("/getImages", api.DefaultModelController{}.ReturnMultipleImages)
 	defaultModuleManageRouter.GET("/returnNiiGzFile/:token/:id", api.DefaultModelController{}.ReturnNiiGzFile)
 	defaultModuleManageRouter.GET("/returnSegFile", api.DefaultModelController{}.ReturnSegFile)
-	defaultModuleManageRouter.GET("/returnSegData", api.DefaultModelController{}.GetNoneZeroLocation)
+	defaultModuleManageRouter.GET("/returnSegData/:token/:id", api.DefaultModelController{}.GetNonZeroLocation)
 	defaultModuleManageRouter.GET("/getDim", api.DefaultModelController{}.DimTest)
 }
 

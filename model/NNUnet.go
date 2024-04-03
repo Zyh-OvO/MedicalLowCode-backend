@@ -16,6 +16,7 @@ type InferenceFile struct {
 	Info         string
 	Share        int
 	Preprocessed int
+	OutputFolder string
 }
 
 type Model struct {
@@ -69,8 +70,11 @@ func SetNnunetInferenceFilePreprocess(idSlice []int) {
 	}
 }
 
-func SetNnunetInferenceFileProcessed(idSlice []int) {
-	if err := DB.Model(&InferenceFile{}).Where("id IN ?", idSlice).Update("finish_time", time.Now()).Error; err != nil {
+func SetNnunetInferenceFileProcessed(idSlice []int, outputFolder string) {
+	if err := DB.Model(&InferenceFile{}).Where("id IN ?", idSlice).Updates(map[string]interface{}{
+		"finish_time":   time.Now(),
+		"output_folder": outputFolder,
+	}).Error; err != nil {
 		panic(err)
 	}
 }
