@@ -27,6 +27,7 @@ const fileEnding = ".nii.gz"
 const outputLog = "output.log"
 const device = "cpu"
 const env = "/opt/miniconda3/etc/profile.d/conda.sh"
+const maxLabelValue = 5
 
 type DefaultModelController struct {
 }
@@ -251,16 +252,11 @@ func (u DefaultModelController) ReturnMultipleImages(c *gin.Context) {
 
 func (u DefaultModelController) ReturnNiiGzFile(c *gin.Context) {
 	fmt.Println("请求的URL是：", c.Request.URL.String())
-	//name := c.Query("file")
-	//modelId, err := strconv.Atoi(c.Query("model_id"))
-	//fmt.Println(modelId)
 	token := c.MustGet("token").(*util.Token)
 	fmt.Println(token)
 	fileId, _ := strconv.Atoi(c.Param("id"))
-	//filePath := "/Users/qhy/Desktop/lth/冯如杯/hepaticvessel_001.nii.gz"
 	inferenceFile := model.QueryNnunetInferenceFile(fileId)
 	filePath := inferenceFile.Address
-	//filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_001.nii.gz"
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read nii.gz file"})
@@ -293,23 +289,44 @@ func (u DefaultModelController) ReturnSegFile(c *gin.Context) {
 	c.Data(http.StatusOK, "application/octet-stream", data)
 }
 
-func (u DefaultModelController) GetNoneZeroLocation(c *gin.Context) {
+func (u DefaultModelController) GetNonZeroLocation(c *gin.Context) {
+	fmt.Println("请求的URL是：", c.Request.URL.String())
+	token := c.MustGet("token").(*util.Token)
+	fmt.Println(token)
+	fileId, _ := strconv.Atoi(c.Param("id"))
+	inferenceFile := model.QueryNnunetInferenceFile(fileId)
+	if inferenceFile.FinishTime == nil {
+		c.JSON(http.StatusOK, gin.H{"status": "inferencing"})
+		return
+	}
+	segmentationFilePath := inferenceFile.OutputFolder + inferenceFile.Name
 	nifti1Image := nifti.Nifti1Image{}
-	nifti1Image.LoadImage("C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_010.nii.gz", true)
+	nifti1Image.LoadImage(segmentationFilePath, true)
 	dims := nifti1Image.GetDims()
-	var nonZero []int
+	var nonZero [][]int
+	for i := 0; i <= maxLabelValue; i++ { // 0-5 共六个2维数组
+		nonZero = append(nonZero, []int{})
+	}
+
+	maxLabel := 0
 	index := 0
 	for z := 0; z < dims[2]; z++ {
 		for y := 0; y < dims[1]; y++ {
 			for x := 0; x < dims[0]; x++ {
-				if nifti1Image.GetAt(uint32(x), uint32(y), uint32(z), 0) != 0 {
-					nonZero = append(nonZero, index)
+				label := int(nifti1Image.GetAt(uint32(x), uint32(y), uint32(z), 0))
+				if label > maxLabelValue {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "max label value exceeded"})
+					return
 				}
+				if label > maxLabel {
+					maxLabel = label
+				}
+				nonZero[label] = append(nonZero[label], index)
 				index++
 			}
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{"nonZero": nonZero})
+	c.JSON(http.StatusOK, gin.H{"nonZero1": nonZero[1], "nonZero2": nonZero[2], "nonZero3": nonZero[3], "nonZero4": nonZero[4], "nonZero5": nonZero[5], "status": "finished", "maxLabel": maxLabel})
 }
 
 func (u DefaultModelController) DimTest(c *gin.Context) {
@@ -353,7 +370,7 @@ func createFolderIfNotExists(folderPath string) bool {
 
 func PreprocessNiiGzFile(filePath string, inputFolder string, modelId int, IdSlice []int, NameSlice []string) {
 	channel := model.QueryNnunetModelChannel(modelId)
-	outputFolder := filePath + "/output"
+	outputFolder := filePath + "/output/"
 	createFolderIfNotExists(outputFolder)
 	if channel == 1 {
 		//	如果文件channel数为1则只对文件重命名
@@ -378,16 +395,64 @@ func PreprocessNiiGzFile(filePath string, inputFolder string, modelId int, IdSli
 				return
 			}
 		}
-		model.SetNnunetInferenceFilePreprocess(IdSlice)
 	} else {
 		//	TODO:多channel分开
+		for i := 0; i < len(NameSlice); i++ {
+			srcFile := filePath + NameSlice[i]
+
+			SplitNiiGFile(srcFile, NameSlice[i], channel, inputFolder)
+			//inputFileName := strings.ReplaceAll(NameSlice[i], fileEnding, "") + "_0000" + fileEnding
+			//fmt.Println("inputFileName:" + inputFileName)
+			//destFile, err := os.Create(inputFolder + inputFileName)
+			//if err != nil {
+			//	fmt.Println("Error creating destination file:", err)
+			//	return
+			//}
+			//defer destFile.Close()
+			//_, err = io.Copy(destFile, srcFile)
+			//if err != nil {
+			//	fmt.Println("Error copying file:", err)
+			//	return
+			//}
+		}
 	}
+
+	model.SetNnunetInferenceFilePreprocess(IdSlice)
 
 	fmt.Println("File copied and renamed successfully.")
 }
 
+func SplitNiiGFile(srcFile string, fileName string, modelChannel int, inputFolder string) {
+	nifti1Image := nifti.Nifti1Image{}
+	nifti1Image.LoadImage(srcFile, true)
+	dims := nifti1Image.GetDims()
+	channels := nifti1Image.GetDims()[3]
+	if channels == modelChannel {
+		for i := 0; i < modelChannel; i++ {
+			img := nifti.NewImg(dims[0], dims[1], dims[2], 1)
+			img.SetNewHeader(nifti1Image.GetHeader())
+			img.SetHeaderDim2(dims[0], dims[1], dims[2], 1)
+			for z := 0; z < dims[2]; z++ {
+				for y := 0; y < dims[1]; y++ {
+					for x := 0; x < dims[0]; x++ {
+						value := nifti1Image.GetAt(uint32(x), uint32(y), uint32(z), uint32(i))
+						img.SetAt(uint32(x), uint32(y), uint32(z), 0, value)
+
+					}
+				}
+			}
+			fileName, _ = strings.CutSuffix(fileName, ".nii.gz")
+			inputFileName := fileName + fmt.Sprintf("_%04d", i) + ".nii"
+			img.Save(inputFolder + inputFileName)
+		}
+	} else {
+		panic("Wrong srcFile dims!")
+		//	TODO: file与model维数不匹配报错
+	}
+}
+
 func InferenceNiiGzFile(filePath string, inputFolder string, modelId int, idSlice []int, nameSlice []string) {
-	outputFolder := filePath + "output"
+	outputFolder := filePath + "output/"
 	cmd := exec.Command("bash", "-c", fmt.Sprintf("source %s && conda activate nnUNet && nnUNetv2_predict -i %s -o %s -c 3d_fullres -d %d -device %s -f all -chk checkpoint_best.pth --disable_progress_bar > %s", env, inputFolder, outputFolder, modelId, device, inputFolder+outputLog))
 	output, err := cmd.Output()
 	if err != nil {
@@ -396,7 +461,7 @@ func InferenceNiiGzFile(filePath string, inputFolder string, modelId int, idSlic
 	}
 	// 输出命令执行结果
 	fmt.Println("命令输出:", string(output))
-	model.SetNnunetInferenceFileProcessed(idSlice)
+	model.SetNnunetInferenceFileProcessed(idSlice, outputFolder)
 }
 
 func PreprocessAndInferenceNiiGzFile(filePath string, inputFolder string, modelId int, idSlice []int, nameSlice []string) {
