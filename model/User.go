@@ -106,7 +106,7 @@ func RegisterNewUser(userEmail string, userName string, userPassword string) {
 			return err
 		}
 		//检查目录是否存在
-		targetDirPath := filepath.Join(RootDirPath, dir.DirName)
+		targetDirPath := filepath.Join(UserFileRootDirPath, dir.DirName)
 		if _, err := os.Stat(targetDirPath); os.IsNotExist(err) {
 			// 使用 MkdirAll 函数递归创建目录
 			if err := os.MkdirAll(targetDirPath, os.ModePerm); err != nil {

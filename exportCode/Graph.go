@@ -122,7 +122,7 @@ func (node *CNode) GenerateTrainCode() string {
 	case nodeType == "TrainLayer":
 		trainLayer := node.Layer.(*TrainLayer)
 		code += "num_epochs = " + strconv.Itoa(trainLayer.NumEpochs) + "\n"
-		code += "save_params_dir_path = '" + trainLayer.SaveParamsDirPath + "'\n"
+		code += "save_params_file_path = '" + trainLayer.SaveParamsFilePath + "'\n"
 		code += "best_loss = float('inf')\n"
 		code += "best_model_params = None\n"
 		code += "for epoch in range(num_epochs):\n"
@@ -141,7 +141,7 @@ func (node *CNode) GenerateTrainCode() string {
 		code += "        best_loss = average_loss\n"
 		code += "        best_model_params = model.state_dict()\n"
 		code += "if best_model_params is not None:\n"
-		code += "    torch.save(best_model_params, save_params_dir_path)\n"
+		code += "    torch.save(best_model_params, save_params_file_path)\n"
 		code += "model.load_state_dict(best_model_params)\n"
 		code += "model.eval()\n"
 		code += "correct = 0\n"
@@ -157,7 +157,7 @@ func (node *CNode) GenerateTrainCode() string {
 	case nodeType == "ReasoningLayer":
 		reasoningLayer := node.Layer.(*ReasoningLayer)
 		code += "params_file_path = '" + reasoningLayer.ParamsFilePath + "'\n"
-		code += "save_result_dir_path = '" + reasoningLayer.SaveResultDirPath + "'\n"
+		code += "save_result_file_path = '" + reasoningLayer.SaveResultFilePath + "'\n"
 		code += "model.load_state_dict(torch.load(params_file_path))\n"
 		code += "model.eval()\n"
 		code += "with torch.no_grad():\n"
@@ -165,7 +165,7 @@ func (node *CNode) GenerateTrainCode() string {
 		//保存到csv
 		code += "reasoning_result = reasoning_result.numpy()\n"
 		code += "reasoning_result = pd.DataFrame(reasoning_result)\n"
-		code += "reasoning_result.to_csv(save_result_dir_path, index=False)\n"
+		code += "reasoning_result.to_csv(save_result_file_path, index=False)\n"
 	}
 	return code
 }

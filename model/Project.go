@@ -2,8 +2,12 @@ package model
 
 import (
 	"gorm.io/gorm"
+	"path/filepath"
+	"strconv"
 	"time"
 )
+
+var LogFileRootDirPath = "./taskLog/"
 
 type Project struct {
 	ProjectId          int `gorm:"primaryKey;autoIncrement"`
@@ -53,6 +57,21 @@ type Module struct {
 
 func (m Module) TableName() string {
 	return "module"
+}
+
+type Task struct {
+	TaskId       int `gorm:"primaryKey;autoIncrement"`
+	UserId       int
+	ProjectId    int
+	TaskName     string
+	LogFilePath  string
+	SubmitTime   time.Time
+	EndTime      *time.Time
+	IsSuccessful bool
+}
+
+func (t Task) TableName() string {
+	return "task"
 }
 
 func NewProject(userId int, projectName string, projectDescription string) *Project {
@@ -201,4 +220,60 @@ func EditModule(userId int, moduleId int, moduleName *string, moduleContent *str
 		panic(err)
 	}
 	return QueryPersonalModule(userId, moduleId)
+}
+
+func NewTask(userId int, projectId int, taskName string) *Task {
+	tx := DB.Begin()
+	task := Task{
+		UserId:       userId,
+		ProjectId:    projectId,
+		TaskName:     taskName,
+		SubmitTime:   time.Now(),
+		IsSuccessful: false,
+	}
+	if err := tx.Create(&task).Error; err != nil {
+		tx.Rollback()
+		panic(err)
+	}
+	task.LogFilePath = filepath.Join("/taskLog/", "task_"+strconv.Itoa(task.TaskId)+".log")
+	if err := tx.Where("task_id = ?", task.TaskId).Select("log_file_path").Updates(&task).Error; err != nil {
+		tx.Rollback()
+		panic(err)
+	}
+	tx.Commit()
+	return &task
+}
+
+func QueryTask(userId int, taskId int) *Task {
+	task := Task{}
+	result := DB.Where("user_id = ? and task_id = ?", userId, taskId).First(&task)
+	if err := result.Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil
+		} else {
+			panic(err)
+		}
+	}
+	return &task
+}
+
+func QueryTaskList(userId int, projectId int) []Task {
+	var tasks []Task
+	result := DB.Where("user_id = ? and project_id = ?", userId, projectId).Find(&tasks)
+	if err := result.Error; err != nil {
+		panic(err)
+	}
+	return tasks
+}
+
+func SetTaskStatus(userId int, taskId int, isSuccessful bool) *Task {
+	now := time.Now()
+	task := Task{
+		EndTime:      &now,
+		IsSuccessful: isSuccessful,
+	}
+	if err := DB.Where("user_id = ? and task_id = ?", userId, taskId).Select("end_time", "is_successful").Updates(&task).Error; err != nil {
+		panic(err)
+	}
+	return QueryTask(userId, taskId)
 }

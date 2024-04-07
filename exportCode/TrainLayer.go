@@ -3,8 +3,8 @@ package exportCode
 var TrainLayerKinds = []string{"TrainLayer", "ReasoningLayer"}
 
 type TrainLayer struct {
-	NumEpochs         int
-	SaveParamsDirPath string
+	NumEpochs          int
+	SaveParamsFilePath string
 }
 
 func (t *TrainLayer) IsLayer() {
@@ -12,8 +12,8 @@ func (t *TrainLayer) IsLayer() {
 }
 
 type ReasoningLayer struct {
-	ParamsFilePath    string
-	SaveResultDirPath string
+	ParamsFilePath     string
+	SaveResultFilePath string
 }
 
 func (r *ReasoningLayer) IsLayer() {

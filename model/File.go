@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-var RootDirPath = "./userFile/"
+var UserFileRootDirPath = "./userFile/"
 
 type Directory struct {
 	DirId   int `gorm:"primaryKey;autoIncrement"`
@@ -55,7 +55,7 @@ func QueryDirPath(userId, dirId int) (string, error) {
 	if err := DB.Raw(sql1, userId, dirId).Scan(&results).Error; err != nil {
 		return "", err
 	}
-	dirPath := RootDirPath
+	dirPath := UserFileRootDirPath
 	for _, r := range results {
 		dirPath = filepath.Join(dirPath, r.DirName)
 	}
