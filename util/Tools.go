@@ -1,20 +1,28 @@
 package util
 
 import (
+	"archive/zip"
 	"bytes"
+	"fmt"
 	"github.com/dlclark/regexp2"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/gomail.v2"
+	"io"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 	"unicode"
 )
+
+const Device = "cpu"
+const Env = "/opt/miniconda3/etc/profile.d/conda.sh"
 
 var tokenKey = []byte("lowcode")
 
@@ -202,4 +210,98 @@ func GiveStaticToken() (*Token, error) {
 		},
 	}
 	return token, nil
+}
+
+func CreateFolderIfNotExists(folderPath string) bool {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Error getting current directory:", err)
+		return false
+	}
+	folderPath = filepath.Join(currentDir, folderPath)
+	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
+		err := os.MkdirAll(folderPath, 0755)
+		if err != nil {
+			fmt.Println("Error creating folder:", err)
+			return false
+		} else {
+			fmt.Println("Folder created successfully:", folderPath)
+			return true
+		}
+	} else {
+		fmt.Println("Folder already exists, no action taken:", folderPath)
+		return true
+	}
+}
+
+func Unzip(src, dest string) error {
+	// 打开 ZIP 文件
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	// 创建目标目录
+	err = os.MkdirAll(dest, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	// 解压 ZIP 文件中的每个文件
+	for _, f := range r.File {
+		// 打开文件
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		defer rc.Close()
+
+		// 跳过奇怪的文件
+		if strings.Contains(f.Name, "__MACOSX") {
+			continue
+		}
+
+		// 创建目标文件
+		path := filepath.Join(dest, f.Name)
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(path, os.ModePerm)
+			continue
+		}
+
+		// 创建目标文件
+		file, err := os.Create(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		// 将文件内容拷贝到目标文件
+		_, err = io.Copy(file, rc)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func FindFileNumInFolder(folder string, extension string) int {
+
+	count := 0
+
+	err := filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() && strings.HasSuffix(path, extension) {
+			count++
+		}
+		return nil
+	})
+
+	if err != nil {
+		fmt.Println("遍历文件夹时发生错误：", err)
+		return -1
+	}
+
+	fmt.Printf("%s文件夹中以%s结尾的文件数量为：%d\n", folder, extension, count)
+	return count
 }
