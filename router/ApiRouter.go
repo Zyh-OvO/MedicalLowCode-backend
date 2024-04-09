@@ -77,6 +77,12 @@ func ApiRouterInit(router *gin.Engine) {
 	fileManageRouterInit(apiRouter)
 	defaultDataManageRouterInit(apiRouter)
 	websocketRouterInit(apiRouter)
+	dataprocessRouterInit(apiRouter)
+}
+
+func dataprocessRouterInit(router *gin.RouterGroup) {
+	dataprocessRouter := router.Group("/dataprocess")
+	dataprocessRouter.POST("/chiSquareTest", api.DataprocessController{}.MedicalDataAnalysisHandler)
 }
 
 func websocketRouterInit(router *gin.RouterGroup) {
@@ -133,13 +139,13 @@ func projectDevelopRouterInit(router *gin.RouterGroup) {
 func defaultModuleManageRouterInit(router *gin.RouterGroup) {
 	defaultModuleManageRouter := router.Group("/defaultModule")
 	defaultModuleManageRouter.Use(CheckCornerStoneToken)
+	//defaultModuleManageRouter.Use(cors.Default())
 	defaultModuleManageRouter.POST("/imageTest", api.DefaultModelController{}.ImageTest)
 	defaultModuleManageRouter.POST("/niiTest", api.DefaultModelController{}.UploadNiiGzFile)
 	defaultModuleManageRouter.POST("/getImages", api.DefaultModelController{}.ReturnMultipleImages)
 	defaultModuleManageRouter.GET("/returnNiiGzFile/:token/:id", api.DefaultModelController{}.ReturnNiiGzFile)
-	defaultModuleManageRouter.GET("/returnSegFile", api.DefaultModelController{}.ReturnSegFile)
 	defaultModuleManageRouter.GET("/returnSegData/:token/:id", api.DefaultModelController{}.GetNonZeroLocation)
-	defaultModuleManageRouter.GET("/getDim", api.DefaultModelController{}.DimTest)
+	defaultModuleManageRouter.POST("/postModelInfo", api.NnunetModelController{}.SetModelInfo)
 }
 
 func defaultDataManageRouterInit(router *gin.RouterGroup) {

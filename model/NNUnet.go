@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"gorm.io/gorm"
 	"time"
 )
@@ -19,21 +20,48 @@ type InferenceFile struct {
 	OutputFolder string
 }
 
-type Model struct {
-	Id          int
-	UserId      int
-	Name        string
-	Description string
-	Cover       string
-	Share       int
-	Channel     int
-	Ready       int
+type NnunetModel struct {
+	Id              int
+	UserId          int
+	Name            string
+	Description     string
+	Cover           string
+	Share           int
+	Channel         int
+	Ready           int
+	Reference       string
+	License         string
+	Release         string
+	TensorImageSize string
+	Label           int
+	LabelNames      string
+	NumTraining     int
+	NumTest         int
+	FileEnding      string
+	ChannelNames    string
+}
+
+type ModelInfo struct {
+	Name            string            `json:"name"` //
+	Description     string            `json:"description"`
+	Reference       string            `json:"reference"`
+	TensorImageSize string            `json:"tensorImageSize"`
+	Labels          map[string]string `json:"labels"` //
+	NumTraining     int               `json:"numTraining"`
+	NumTest         int               `json:"numTest"`
+	FileEnding      string            `json:"file_ending"`
+	ChannelNames    map[string]string `json:"channel_names"` //
+	License         string            `json:"license"`
+	Release         string            `json:"release"`
+	// 以上信息可以生成dataset.json
+	Share int    `json:"share"`
+	Cover string `json:"cover"`
 }
 
 func (i InferenceFile) TableName() string {
 	return "nnunet_inference"
 }
-func (m Model) TableName() string {
+func (m NnunetModel) TableName() string {
 	return "nnunet_models"
 }
 
@@ -79,10 +107,87 @@ func SetNnunetInferenceFileProcessed(idSlice []int, outputFolder string) {
 	}
 }
 
+func AddNnunetModel(info ModelInfo, userId int) NnunetModel {
+	channel := len(info.ChannelNames)
+	label := len(info.Labels)
+	labels, _ := json.Marshal(info.Labels)
+	channels, _ := json.Marshal(info.ChannelNames)
+	model := NnunetModel{
+		UserId:          userId,
+		Name:            info.Name,
+		Description:     info.Description,
+		Cover:           info.Cover,
+		Share:           info.Share,
+		Channel:         channel,
+		Ready:           0, // 1为训练好
+		Reference:       info.Reference,
+		License:         info.License,
+		Release:         info.Release,
+		TensorImageSize: info.TensorImageSize,
+		Label:           label,
+		LabelNames:      string(labels),
+		NumTraining:     info.NumTraining,
+		NumTest:         info.NumTest,
+		FileEnding:      info.FileEnding,
+		ChannelNames:    string(channels),
+	}
+	if err := DB.Create(&model).Error; err != nil {
+		panic(err)
+	}
+	return model
+}
+
+func UpdateNnunetModel(info ModelInfo, modelId int, ready int) NnunetModel {
+	channel := len(info.ChannelNames)
+	label := len(info.Labels)
+	labels, _ := json.Marshal(info.Labels)
+	channels, _ := json.Marshal(info.ChannelNames)
+	if err := DB.Model(&NnunetModel{}).Where("id = ? ", modelId).Updates(map[string]interface{}{
+		//UserId:          userId,
+		"Name":            info.Name,
+		"Description":     info.Description,
+		"Cover":           info.Cover,
+		"Share":           info.Share,
+		"Channel":         channel,
+		"Ready":           ready, // 1为训练好
+		"Reference":       info.Reference,
+		"License":         info.License,
+		"Release":         info.Release,
+		"TensorImageSize": info.TensorImageSize,
+		"Label":           label,
+		"LabelNames":      string(labels),
+		"NumTraining":     info.NumTraining,
+		"NumTest":         info.NumTest,
+		"FileEnding":      info.FileEnding,
+		"ChannelNames":    string(channels),
+	}).Error; err != nil {
+		panic(err)
+	}
+	nnunetModel := NnunetModel{}
+	DB.Where("id = ?", modelId).Last(&nnunetModel)
+	return nnunetModel
+}
+
+func SetNnunetModelReady(modelId int, ready int) {
+	if err := DB.Model(&NnunetModel{}).Where("id = ? ", modelId).Updates(map[string]interface{}{
+		"Ready": ready, // 1为训练好
+	}).Error; err != nil {
+		panic(err)
+	}
+}
+
 func QueryNnunetModelChannel(modelId int) int {
 	var channel int
-	if err := DB.Model(&Model{}).Where("id = ?", modelId).Pluck("channel", &channel).Error; err != nil {
+	if err := DB.Model(&NnunetModel{}).Where("id = ?", modelId).Pluck("channel", &channel).Error; err != nil {
 		panic("failed to query database")
 	}
 	return channel
+}
+
+func QueryNnunetModelReady(modelId int) int {
+	ready := 0
+	if err := DB.Model(&NnunetModel{}).Where("id = ?", modelId).Pluck("ready", &ready).Error; err != nil {
+		panic("failed to query database")
+	}
+	return ready
 }

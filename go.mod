@@ -1,6 +1,8 @@
 module MedicalLowCode-backend
 
-go 1.20
+go 1.21
+
+toolchain go1.22.1
 
 require (
 	github.com/KyungWonPark/nifti v0.0.0-20210426021215-dbd70bb469cf
@@ -10,6 +12,7 @@ require (
 	github.com/gorilla/websocket v1.5.1
 	github.com/hpcloud/tail v1.0.0
 	golang.org/x/crypto v0.21.0
+	gonum.org/v1/gonum v0.15.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/gyuho/goraph.v2 v2.0.0-20160328020532-d460590d53a9
 	gorm.io/driver/mysql v1.5.4
@@ -47,7 +50,6 @@ require (
 	golang.org/x/net v0.22.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect

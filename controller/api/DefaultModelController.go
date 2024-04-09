@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -25,8 +24,8 @@ import (
 const viewNiiGz = "data/view_nii_gz/"
 const fileEnding = ".nii.gz"
 const outputLog = "output.log"
-const device = "cpu"
-const env = "/opt/miniconda3/etc/profile.d/conda.sh"
+const device = util.Device
+const env = util.Env
 const maxLabelValue = 5
 
 type DefaultModelController struct {
@@ -93,6 +92,28 @@ func (u DefaultModelController) WebsocketHandler(c *gin.Context) {
 			userId = token.UserId
 			modelId = message.ModelId
 
+			InferenceFile := model.QueryNnunetInferenceFile(fileId)
+
+			// 判断文件推理状态
+			if InferenceFile == nil || InferenceFile.FinishTime != nil {
+				var progress InferenceProgress
+				if InferenceFile == nil {
+					progress.Status = "no such file"
+				} else {
+					progress.Status = "finished"
+				}
+				jsonData, err := json.Marshal(progress)
+				if err != nil {
+					fmt.Println("Error marshalling JSON:", err)
+					break
+				}
+				if err := conn.WriteMessage(websocket.TextMessage, jsonData); err != nil {
+					fmt.Println("Error writing message:", err)
+					break
+				}
+				return
+			}
+
 			go WatchInferenceProgress(fileId, userId, modelId, conn)
 
 			// 将 Message 结构体实例序列化为 JSON 字符串
@@ -110,14 +131,6 @@ func (u DefaultModelController) WebsocketHandler(c *gin.Context) {
 
 			flag = true
 		}
-
-		//if ()
-		//go WatchInferenceProgress(fileId, userId, modelId)
-		// 回复客户端消息
-		//if err := conn.WriteMessage(websocket.TextMessage, p); err != nil {
-		//	fmt.Println("Error writing message:", err)
-		//	break
-		//}
 	}
 }
 
@@ -132,6 +145,12 @@ func (u DefaultModelController) Test(c *gin.Context) {
 }
 
 func (u DefaultModelController) UploadNiiGzFile(c *gin.Context) {
+	modelId, _ := strconv.Atoi(c.Request.FormValue("modelId"))
+	// 检查
+	if model.QueryNnunetModelReady(modelId) != 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Model not ready"})
+		return
+	}
 	file, handler, err := c.Request.FormFile("nifti")
 	if err != nil {
 		fmt.Println(err)
@@ -146,10 +165,9 @@ func (u DefaultModelController) UploadNiiGzFile(c *gin.Context) {
 			return
 		}
 	}(file)
-	modelId, _ := strconv.Atoi(c.Request.FormValue("modelId"))
 	token := c.MustGet("token").(*util.Token)
 	filePath := viewNiiGz + strconv.Itoa(token.UserId) + "/" + strconv.Itoa(modelId) + "/"
-	if createFolderIfNotExists(filePath) != true {
+	if util.CreateFolderIfNotExists(filePath) != true {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create folder"})
 		return
 	}
@@ -180,7 +198,7 @@ func (u DefaultModelController) UploadNiiGzFile(c *gin.Context) {
 	}
 
 	inputFolder := filePath + strconv.Itoa(inferenceFile.Id) + "_input/"
-	createFolderIfNotExists(inputFolder)
+	util.CreateFolderIfNotExists(inputFolder)
 
 	// 进行预处理，分开channels
 	IdSlice := []int{inferenceFile.Id}
@@ -264,29 +282,11 @@ func (u DefaultModelController) ReturnNiiGzFile(c *gin.Context) {
 	}
 
 	c.Header("Content-Disposition", "attachment; filename="+inferenceFile.Name)
-	//c.Header("file_id", strconv.Itoa(inferenceFile.Id))
 
 	c.Data(http.StatusOK, "application/octet-stream", data)
-
-	//go WatchInferenceProgress(inferenceFile.Id, inferenceFile.UserId, inferenceFile.ModelId)
 
 	// 删除已经查看的临时文件
 	//os.Remove(filePath)
-}
-
-func (u DefaultModelController) ReturnSegFile(c *gin.Context) {
-	filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_010.nii.gz"
-	//filePath := "C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\labelsTr\\lung_001.nii.gz"
-	data, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read nii.gz file"})
-		return
-	}
-
-	filename := "seg.nii.gz"
-	c.Header("Content-Disposition", "attachment; filename="+filename)
-
-	c.Data(http.StatusOK, "application/octet-stream", data)
 }
 
 func (u DefaultModelController) GetNonZeroLocation(c *gin.Context) {
@@ -329,14 +329,6 @@ func (u DefaultModelController) GetNonZeroLocation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"nonZero1": nonZero[1], "nonZero2": nonZero[2], "nonZero3": nonZero[3], "nonZero4": nonZero[4], "nonZero5": nonZero[5], "status": "finished", "maxLabel": maxLabel})
 }
 
-func (u DefaultModelController) DimTest(c *gin.Context) {
-	nifti1Image := nifti.Nifti1Image{}
-	nifti1Image.LoadImage("C:\\BUAA\\3rd\\FengRu\\MICCAI-LITS2017\\Task06_Lung\\Task06_Lung\\imagesTr\\lung_023.nii.gz", true)
-	dims := nifti1Image.GetDims()
-	fmt.Println(dims)
-	fmt.Println(1)
-}
-
 // 将整数数组转换为字符串
 func intArrayToString(arr []int) string {
 	var strArr []string
@@ -346,32 +338,10 @@ func intArrayToString(arr []int) string {
 	return strings.Join(strArr, ", ")
 }
 
-func createFolderIfNotExists(folderPath string) bool {
-	currentDir, err := os.Getwd()
-	if err != nil {
-		fmt.Println("Error getting current directory:", err)
-		return false
-	}
-	folderPath = filepath.Join(currentDir, folderPath)
-	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
-		err := os.MkdirAll(folderPath, 0755)
-		if err != nil {
-			fmt.Println("Error creating folder:", err)
-			return false
-		} else {
-			fmt.Println("Folder created successfully:", folderPath)
-			return true
-		}
-	} else {
-		fmt.Println("Folder already exists, no action taken:", folderPath)
-		return true
-	}
-}
-
 func PreprocessNiiGzFile(filePath string, inputFolder string, modelId int, IdSlice []int, NameSlice []string) {
 	channel := model.QueryNnunetModelChannel(modelId)
 	outputFolder := filePath + "/output/"
-	createFolderIfNotExists(outputFolder)
+	util.CreateFolderIfNotExists(outputFolder)
 	if channel == 1 {
 		//	如果文件channel数为1则只对文件重命名
 		for i := 0; i < len(NameSlice); i++ {
@@ -399,21 +369,7 @@ func PreprocessNiiGzFile(filePath string, inputFolder string, modelId int, IdSli
 		//	TODO:多channel分开
 		for i := 0; i < len(NameSlice); i++ {
 			srcFile := filePath + NameSlice[i]
-
 			SplitNiiGFile(srcFile, NameSlice[i], channel, inputFolder)
-			//inputFileName := strings.ReplaceAll(NameSlice[i], fileEnding, "") + "_0000" + fileEnding
-			//fmt.Println("inputFileName:" + inputFileName)
-			//destFile, err := os.Create(inputFolder + inputFileName)
-			//if err != nil {
-			//	fmt.Println("Error creating destination file:", err)
-			//	return
-			//}
-			//defer destFile.Close()
-			//_, err = io.Copy(destFile, srcFile)
-			//if err != nil {
-			//	fmt.Println("Error copying file:", err)
-			//	return
-			//}
 		}
 	}
 
@@ -468,6 +424,7 @@ func PreprocessAndInferenceNiiGzFile(filePath string, inputFolder string, modelI
 	// 预处理
 	PreprocessNiiGzFile(filePath, inputFolder, modelId, idSlice, nameSlice)
 	// 进行推断
+
 	InferenceNiiGzFile(filePath, inputFolder, modelId, idSlice, nameSlice)
 }
 
