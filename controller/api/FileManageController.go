@@ -146,7 +146,9 @@ func (f FileManageController) NewDirectory(c *gin.Context) {
 	}
 	parentDirId, _ := strconv.Atoi(json.ParentDirId)
 	dir := model.NewDirectory(token.UserId, parentDirId, json.DirName)
-	c.JSON(http.StatusOK, dir)
+	if dir == nil {
+	}
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 func (f FileManageController) DeleteDirectory(c *gin.Context) {
@@ -181,6 +183,6 @@ func (f FileManageController) GetRootDir(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"dirId": dir.DirId,
+		"dirId": strconv.Itoa(dir.DirId),
 	})
 }

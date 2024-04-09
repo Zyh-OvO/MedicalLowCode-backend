@@ -9,6 +9,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"net/http"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -77,8 +78,10 @@ func (p ProjectDevelopController) SubmitTask(c *gin.Context) {
 }
 
 func RunTask(userId int, taskId int, code string) {
-	cmd1 := "echo '" + code + "' > ./taskCode/task_" + strconv.Itoa(taskId) + ".py"
-	cmd2 := "python ./taskCode/task_" + strconv.Itoa(taskId) + ".py > ./taskLog/task_" + strconv.Itoa(taskId) + ".log"
+	codeFilePath := filepath.Join(model.CodeFileRootDirPath, "task_"+strconv.Itoa(taskId)+".py")
+	logFilePath := filepath.Join(model.LogFileRootDirPath, "task_"+strconv.Itoa(taskId)+".log")
+	cmd1 := "echo '" + code + "' > " + codeFilePath
+	cmd2 := "unbuffer python " + codeFilePath + " > " + logFilePath + " 2>&1"
 	allCmd := cmd1 + " && " + cmd2
 	if err := exec.Command("bash", "-c", allCmd).Run(); err != nil {
 		model.SetTaskStatus(userId, taskId, false)

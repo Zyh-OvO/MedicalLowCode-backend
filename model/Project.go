@@ -7,7 +7,8 @@ import (
 	"time"
 )
 
-var LogFileRootDirPath = "./taskLog/"
+var LogFileRootDirPath = "./file/taskLog/"
+var CodeFileRootDirPath = "./file/taskCode/"
 
 type Project struct {
 	ProjectId          int `gorm:"primaryKey;autoIncrement"`
@@ -235,7 +236,7 @@ func NewTask(userId int, projectId int, taskName string) *Task {
 		tx.Rollback()
 		panic(err)
 	}
-	task.LogFilePath = filepath.Join("/taskLog/", "task_"+strconv.Itoa(task.TaskId)+".log")
+	task.LogFilePath = filepath.Join(LogFileRootDirPath, "task_"+strconv.Itoa(task.TaskId)+".log")
 	if err := tx.Where("task_id = ?", task.TaskId).Select("log_file_path").Updates(&task).Error; err != nil {
 		tx.Rollback()
 		panic(err)
