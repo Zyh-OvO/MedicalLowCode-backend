@@ -20,6 +20,7 @@ type item struct {
 type ChiSquareTest struct {
 	VarAValue []int `json:"varAValue"`
 	VarBValue []int `json:"varBValue"`
+	BTypeNum  int   `json:"BTypeNum"`
 }
 
 type AnalysisResult struct {
@@ -37,20 +38,14 @@ func (u DataprocessController) MedicalDataAnalysisHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON info"})
 		return
 	}
-	var table [2][2]float64
-	sum := 0
-	for i := 0; i < len(chisquaredata.VarAValue); i++ {
-		sum += chisquaredata.VarAValue[i]
-	}
-	table[0][1] = float64(sum)
-	table[0][0] = float64(len(chisquaredata.VarAValue) - sum)
+	var table [2][]float64
 
-	sum = 0
-	for i := 0; i < len(chisquaredata.VarBValue); i++ {
-		sum += chisquaredata.VarBValue[i]
+	table[0] = make([]float64, chisquaredata.BTypeNum)
+	table[1] = make([]float64, chisquaredata.BTypeNum)
+
+	for i := 0; i < len(chisquaredata.VarAValue); i++ {
+		table[chisquaredata.VarAValue[i]][chisquaredata.VarBValue[i]]++
 	}
-	table[1][1] = float64(sum)
-	table[1][0] = float64(len(chisquaredata.VarBValue) - sum)
 
 	var ChiSquare float64
 
@@ -60,15 +55,34 @@ func (u DataprocessController) MedicalDataAnalysisHandler(c *gin.Context) {
 	c_d := table[1][1]
 	N := c_a + c_b + c_c + c_d
 
-	if table[0][0] > 5 && table[0][1] > 5 && table[1][0] > 5 && table[1][1] > 5 && table[0][0]+table[0][1]+table[1][0]+table[1][1] >= 40 {
-		ChiSquare = stat.ChiSquare(table[0][:], table[1][:])
+	var zero_flag bool
+
+	var error_flag bool
+
+	if chisquaredata.BTypeNum > 2 || table[0][0] > 5 && table[0][1] > 5 && table[1][0] > 5 && table[1][1] > 5 && table[0][0]+table[0][1]+table[1][0]+table[1][1] >= 40 {
+		for i := 0; i < 2; i++ {
+			for j := 0; j < chisquaredata.BTypeNum; j++ {
+				if table[i][j] == 0 {
+					zero_flag = true
+				}
+			}
+		}
+
+		if zero_flag == false {
+			ChiSquare = stat.ChiSquare(table[0][:], table[1][:])
+		} else {
+			error_flag = true
+		}
 	} else if table[0][0] >= 1 && table[0][1] >= 1 && table[1][0] >= 1 && table[1][1] >= 1 && table[0][0]+table[0][1]+table[1][0]+table[1][1] >= 40 {
 		ChiSquare = (math.Abs(c_a*c_d-c_b*c_c) - N*N/4) * (math.Abs(c_a*c_d-c_b*c_c) - N*N/4) / (c_a + c_b) / (c_c + c_d) / (c_a + c_c) / (c_b + c_d)
 	} else {
 		ChiSquare = combination(c_a+c_b, c_a) * combination(c_c+c_d, c_c) / combination(N, c_a+c_c)
 	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "数据已处理完毕", "chiSquare": ChiSquare})
+	if error_flag {
+		c.JSON(http.StatusOK, gin.H{"message": "数据不合法", "chiSquare": -1})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"message": "数据已处理完毕", "chiSquare": ChiSquare})
+	}
 }
 
 func combination(n, k float64) float64 {
