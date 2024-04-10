@@ -55,34 +55,22 @@ func (u DataprocessController) MedicalDataAnalysisHandler(c *gin.Context) {
 	c_d := table[1][1]
 	N := c_a + c_b + c_c + c_d
 
-	var zero_flag bool
-
-	var error_flag bool
-
 	if chisquaredata.BTypeNum > 2 || table[0][0] > 5 && table[0][1] > 5 && table[1][0] > 5 && table[1][1] > 5 && table[0][0]+table[0][1]+table[1][0]+table[1][1] >= 40 {
 		for i := 0; i < 2; i++ {
 			for j := 0; j < chisquaredata.BTypeNum; j++ {
 				if table[i][j] == 0 {
-					zero_flag = true
+					table[i][j] = 0.01
 				}
 			}
 		}
-
-		if zero_flag == false {
-			ChiSquare = stat.ChiSquare(table[0][:], table[1][:])
-		} else {
-			error_flag = true
-		}
+		ChiSquare = stat.ChiSquare(table[0][:], table[1][:])
 	} else if table[0][0] >= 1 && table[0][1] >= 1 && table[1][0] >= 1 && table[1][1] >= 1 && table[0][0]+table[0][1]+table[1][0]+table[1][1] >= 40 {
 		ChiSquare = (math.Abs(c_a*c_d-c_b*c_c) - N*N/4) * (math.Abs(c_a*c_d-c_b*c_c) - N*N/4) / (c_a + c_b) / (c_c + c_d) / (c_a + c_c) / (c_b + c_d)
 	} else {
 		ChiSquare = combination(c_a+c_b, c_a) * combination(c_c+c_d, c_c) / combination(N, c_a+c_c)
 	}
-	if error_flag {
-		c.JSON(http.StatusOK, gin.H{"message": "数据不合法", "chiSquare": -1})
-	} else {
-		c.JSON(http.StatusOK, gin.H{"message": "数据已处理完毕", "chiSquare": ChiSquare})
-	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "数据已处理完毕", "chiSquare": ChiSquare})
 }
 
 func combination(n, k float64) float64 {
