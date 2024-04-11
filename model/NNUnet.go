@@ -21,24 +21,24 @@ type InferenceFile struct {
 }
 
 type NnunetModel struct {
-	Id              int
-	UserId          int
-	Name            string
-	Description     string
-	Cover           string
-	Share           int
-	Channel         int
-	Ready           int
-	Reference       string
-	License         string
-	Release         string
-	TensorImageSize string
-	Label           int
-	LabelNames      string
-	NumTraining     int
-	NumTest         int
-	FileEnding      string
-	ChannelNames    string
+	Id              int    `json:"id"`
+	UserId          int    `json:"user_id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	Cover           string `json:"cover"`
+	Share           int    `json:"share"`
+	Channel         int    `json:"channel"`
+	Ready           int    `json:"ready"`
+	Reference       string `json:"reference"`
+	License         string `json:"license"`
+	Release         string `json:"release"`
+	TensorImageSize string `json:"tensor_image_size"`
+	Label           int    `json:"label"`
+	LabelNames      string `json:"label_names"`
+	NumTraining     int    `json:"num_training"`
+	NumTest         int    `json:"num_test"`
+	FileEnding      string `json:"file_ending"`
+	ChannelNames    string `json:"channel_names"`
 }
 
 type ModelInfo struct {
@@ -190,4 +190,10 @@ func QueryNnunetModelReady(modelId int) int {
 		panic("failed to query database")
 	}
 	return ready
+}
+
+func QueryUserNnunetModelList(userId int) []NnunetModel {
+	var modelList []NnunetModel
+	DB.Where("ready = ?", 1).Find(&modelList)
+	return modelList
 }

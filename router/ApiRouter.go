@@ -146,6 +146,7 @@ func defaultModuleManageRouterInit(router *gin.RouterGroup) {
 	defaultModuleManageRouter.GET("/returnNiiGzFile/:token/:id", api.DefaultModelController{}.ReturnNiiGzFile)
 	defaultModuleManageRouter.GET("/returnSegData/:token/:id", api.DefaultModelController{}.GetNonZeroLocation)
 	defaultModuleManageRouter.POST("/postModelInfo", api.NnunetModelController{}.SetModelInfo)
+	defaultModuleManageRouter.GET("/getModelInfoList/:token", api.NnunetModelController{}.GetModelList)
 }
 
 func defaultDataManageRouterInit(router *gin.RouterGroup) {

@@ -150,6 +150,26 @@ func (u NnunetModelController) SetModelInfo(c *gin.Context) {
 
 }
 
+func (u NnunetModelController) GetModelList(c *gin.Context) {
+	fmt.Println("请求的URL是：", c.Request.URL.String())
+	token := c.MustGet("token").(*util.Token)
+	fmt.Println(token)
+	modelList := model.QueryUserNnunetModelList(token.UserId)
+
+	var jsonDataList [][]byte
+
+	for i := 0; i < len(modelList); i++ {
+		jsonData, err := json.Marshal(modelList[i])
+		if err != nil {
+			fmt.Println("Error marshalling JSON:", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Error marshalling JSON"})
+		}
+		jsonDataList = append(jsonDataList, jsonData)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"modelList": jsonDataList})
+}
+
 func TrainNnunetModel(destDir string, modelId int) {
 	ConvertNnunetModelData(destDir, modelId)
 	PreprocessNnunetModel(modelId)
