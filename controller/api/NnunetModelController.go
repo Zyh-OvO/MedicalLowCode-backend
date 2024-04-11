@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -177,6 +178,20 @@ func (u NnunetModelController) GetModelList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"modelList": jsonDataList})
+
+}
+
+func (u NnunetModelController) GetModelInfoInference(c *gin.Context) {
+	fmt.Println("请求的URL是：", c.Request.URL.String())
+	token := c.MustGet("token").(*util.Token)
+	fmt.Println(token)
+	historyFileList := model.QueryUserInferenceFileList(token.UserId)
+	modelId, _ := strconv.Atoi(c.Param("modelId"))
+	labelNames := model.QueryNnunetModelLabels(modelId)
+	fmt.Println(historyFileList)
+	fmt.Println(labelNames)
+
+	c.JSON(http.StatusOK, gin.H{"history_file_list": historyFileList, "label_names": labelNames})
 
 }
 

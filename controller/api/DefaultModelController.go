@@ -174,7 +174,8 @@ func (u DefaultModelController) UploadNiiGzFile(c *gin.Context) {
 
 	// 加入数据库操作
 	// TODO:文件名重复？现在是当新文件处理
-	inferenceFile := model.AddNnunetInferenceFile(token.UserId, modelId, name, filePath+name)
+	share := 1
+	inferenceFile := model.AddNnunetInferenceFile(token.UserId, modelId, name, filePath+name, share)
 
 	// 在本地创建一个同名的文件
 	out, err := os.Create(inferenceFile.Address)

@@ -148,6 +148,7 @@ func defaultModuleManageRouterInit(router *gin.RouterGroup) {
 	defaultModuleManageRouter.GET("/returnSegData/:token/:id", api.DefaultModelController{}.GetNonZeroLocation)
 	defaultModuleManageRouter.POST("/postModelInfo", api.NnunetModelController{}.SetModelInfo)
 	defaultModuleManageRouter.GET("/getModelInfoList/:token", api.NnunetModelController{}.GetModelList)
+	defaultModuleManageRouter.GET("/getModelInfoInference/:token/:modelId", api.NnunetModelController{}.GetModelInfoInference)
 }
 
 func defaultDataManageRouterInit(router *gin.RouterGroup) {

@@ -7,17 +7,17 @@ import (
 )
 
 type InferenceFile struct {
-	Id           int
-	UserId       int
-	ModelId      int
-	CreateTime   time.Time
-	FinishTime   *time.Time
-	Name         string
-	Address      string
-	Info         string
-	Share        int
-	Preprocessed int
-	OutputFolder string
+	Id           int        `json:"id"`
+	UserId       int        `json:"user_id"`
+	ModelId      int        `json:"model_id"`
+	CreateTime   time.Time  `json:"create_time"`
+	FinishTime   *time.Time `json:"finish_time"`
+	Name         string     `json:"name"`
+	Address      string     `json:"address"`
+	Info         string     `json:"info"`
+	Share        int        `json:"share"`
+	Preprocessed int        `json:"preprocessed"`
+	OutputFolder string     `json:"output_folder"`
 }
 
 type NnunetModel struct {
@@ -65,13 +65,14 @@ func (m NnunetModel) TableName() string {
 	return "nnunet_models"
 }
 
-func AddNnunetInferenceFile(userId int, modelId int, fileName string, address string) InferenceFile {
+func AddNnunetInferenceFile(userId int, modelId int, fileName string, address string, share int) InferenceFile {
 	file := InferenceFile{
 		UserId:     userId,
 		ModelId:    modelId,
 		Name:       fileName,
 		Address:    address,
 		CreateTime: time.Now(),
+		Share:      share,
 	}
 	if err := DB.Create(&file).Error; err != nil {
 		panic(err)
@@ -90,6 +91,12 @@ func QueryNnunetInferenceFile(id int) *InferenceFile {
 		}
 	}
 	return &file
+}
+
+func QueryUserInferenceFileList(userId int) []InferenceFile {
+	var fileList []InferenceFile
+	DB.Where("user_id = ?", userId).Find(&fileList)
+	return fileList
 }
 
 func SetNnunetInferenceFilePreprocess(idSlice []int) {
@@ -182,6 +189,18 @@ func QueryNnunetModelChannel(modelId int) int {
 		panic("failed to query database")
 	}
 	return channel
+}
+
+func QueryNnunetModelLabels(modelId int) map[string]string {
+
+	nnunetModel := NnunetModel{}
+	DB.Where("id = ?", modelId).Last(&nnunetModel)
+
+	var labels map[string]string
+	if err := json.Unmarshal([]byte(nnunetModel.LabelNames), &labels); err != nil {
+		panic(err)
+	}
+	return labels
 }
 
 func QueryNnunetModelReady(modelId int) int {
