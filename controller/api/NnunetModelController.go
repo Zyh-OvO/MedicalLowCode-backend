@@ -18,6 +18,14 @@ import (
 type NnunetModelController struct {
 }
 
+type NnunetModelListElement struct {
+	Id          int    `json:"id"`
+	UserId      int    `json:"user_id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Cover       string `json:"cover"`
+}
+
 const toTrain = "data/to_train/" // 存储模型训练原数据
 
 func (u NnunetModelController) SetModelInfo(c *gin.Context) {
@@ -147,6 +155,28 @@ func (u NnunetModelController) SetModelInfo(c *gin.Context) {
 	go TrainNnunetModel(destDir, nnUnetModel.Id)
 
 	c.JSON(http.StatusOK, gin.H{"message": "数据已收到", "modelId": nnUnetModel.Id})
+
+}
+
+func (u NnunetModelController) GetModelList(c *gin.Context) {
+	fmt.Println("请求的URL是：", c.Request.URL.String())
+	token := c.MustGet("token").(*util.Token)
+	fmt.Println(token)
+	modelList := model.QueryUserNnunetModelList(token.UserId)
+
+	var jsonDataList []interface{}
+
+	for i := 0; i < len(modelList); i++ {
+		var element NnunetModelListElement
+		element.Name = modelList[i].Name
+		element.Id = modelList[i].Id
+		element.UserId = modelList[i].UserId
+		element.Description = modelList[i].Description
+		element.Cover = modelList[i].Cover
+		jsonDataList = append(jsonDataList, element)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"modelList": jsonDataList})
 
 }
 

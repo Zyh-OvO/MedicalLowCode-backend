@@ -83,6 +83,7 @@ func ApiRouterInit(router *gin.Engine) {
 func dataprocessRouterInit(router *gin.RouterGroup) {
 	dataprocessRouter := router.Group("/dataprocess")
 	dataprocessRouter.POST("/chiSquareTest", api.DataprocessController{}.ChisquarHandler)
+	dataprocessRouter.POST("/kMeans", api.DataprocessController{}.K_means_func)
 }
 
 func websocketRouterInit(router *gin.RouterGroup) {
@@ -146,6 +147,7 @@ func defaultModuleManageRouterInit(router *gin.RouterGroup) {
 	defaultModuleManageRouter.GET("/returnNiiGzFile/:token/:id", api.DefaultModelController{}.ReturnNiiGzFile)
 	defaultModuleManageRouter.GET("/returnSegData/:token/:id", api.DefaultModelController{}.GetNonZeroLocation)
 	defaultModuleManageRouter.POST("/postModelInfo", api.NnunetModelController{}.SetModelInfo)
+	defaultModuleManageRouter.GET("/getModelInfoList/:token", api.NnunetModelController{}.GetModelList)
 }
 
 func defaultDataManageRouterInit(router *gin.RouterGroup) {

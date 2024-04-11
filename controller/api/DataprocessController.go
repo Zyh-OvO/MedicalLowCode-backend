@@ -19,7 +19,7 @@ type ChiSquareTest struct {
 	BTypeNum  int   `json:"BTypeNum"`
 }
 
-type K_means_data struct {
+type KMeansData struct {
 	K         int         `json:"k"`
 	Data      [][]float64 `json:"data"`
 	ItorTimes int         `json:"itorTimes"`
@@ -80,25 +80,27 @@ func combination(n, k float64) float64 {
 	return math.Gamma(float64(n+1)) / (math.Gamma(float64(k+1)) * math.Gamma(float64(n-k+1)))
 }
 
-func (u DataprocessController) k_means_func(c *gin.Context) {
+func (u DataprocessController) K_means_func(c *gin.Context) {
 	info := c.Request.FormValue("data")
 	fmt.Println(info)
 	// 解析 JSON 数据到结构体
-	var k_means_data K_means_data
-	if err := json.Unmarshal([]byte(info), &k_means_data); err != nil {
+	var kMeansData KMeansData
+	if err := json.Unmarshal([]byte(info), &kMeansData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON info"})
 		return
 	}
 	var types []int // 取值是0-K-1
-	types = make([]int, len(k_means_data.Data[0]))
+	types = make([]int, len(kMeansData.Data[0]))
 
 	var points_location [][]float64
 	points_location = make([][]float64, k_means_data.K)
 
+	fmt.Println(11)
 	for i := 0; i < len(points_location); i++ {
-		points_location[i] = make([]float64, len(k_means_data.Data))
+		points_location[i] = make([]float64, len(kMeansData.Data))
 	}
 
+	fmt.Println(22)
 	// 初始化k个点
 	for i := 0; i < len(points_location); i++ {
 		for j := 0; j < len(points_location[0]); j++ {
@@ -106,25 +108,27 @@ func (u DataprocessController) k_means_func(c *gin.Context) {
 		}
 	}
 
-	for i := 0; i < k_means_data.K; i++ {
+	fmt.Println(33)
+
+	for i := 0; i < kMeansData.K; i++ {
 		var points_location_temp [][]float64
-		points_location_temp = make([][]float64, len(k_means_data.Data[0]))
+		points_location_temp = make([][]float64, len(kMeansData.Data[0]))
 		for i := 0; i < len(points_location); i++ {
-			points_location_temp[i] = make([]float64, len(k_means_data.Data))
+			points_location_temp[i] = make([]float64, len(kMeansData.Data))
 		}
 
 		num := make([]int, len(points_location))
 		//首先计算属于每个中心点的点
-		for j := 0; j < len(k_means_data.Data[0]); j++ { // 对于每一行
+		for j := 0; j < len(kMeansData.Data[0]); j++ { // 对于每一行
 			var this_min float64 // 当前值
 			var dis_min float64  //最小值
 			var min_point int    // 最小值对应的哪一行(代表一个点)
 			dis_min = 2
-			for k := 0; k < k_means_data.K; k++ { //对于每一个聚点
+			for k := 0; k < kMeansData.K; k++ { //对于每一个聚点
 				//计算第j个点对于第k个聚点的距离
 				this_min = 0
-				for l := 0; l < len(k_means_data.Data); l++ { // 对于第l维，也就是第k列
-					this_min += (k_means_data.Data[l][j] - points_location[k][j]) * (k_means_data.Data[l][j] - points_location[k][j])
+				for l := 0; l < len(kMeansData.Data); l++ { // 对于第l维，也就是第k列
+					this_min += (kMeansData.Data[l][j] - points_location[k][j]) * (kMeansData.Data[l][j] - points_location[k][j])
 				}
 				if this_min < dis_min {
 					dis_min = this_min
@@ -133,10 +137,12 @@ func (u DataprocessController) k_means_func(c *gin.Context) {
 			}
 			num[min_point]++
 			types[j] = min_point
-			for k := 0; k < len(k_means_data.Data); k++ {
-				points_location_temp[min_point][k] += k_means_data.Data[k][j]
+			for k := 0; k < len(kMeansData.Data); k++ {
+				points_location_temp[min_point][k] += kMeansData.Data[k][j]
 			}
 		}
+
+		fmt.Println(44)
 		//然后移动中心点
 		for j := 0; j < len(points_location); j++ {
 			// 对于第j个聚点
