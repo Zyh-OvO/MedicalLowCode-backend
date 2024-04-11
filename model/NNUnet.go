@@ -191,16 +191,12 @@ func QueryNnunetModelChannel(modelId int) int {
 	return channel
 }
 
-func QueryNnunetModelLabels(modelId int) map[string]string {
+func QueryNnunetModel(modelId int) NnunetModel {
 
 	nnunetModel := NnunetModel{}
 	DB.Where("id = ?", modelId).Last(&nnunetModel)
 
-	var labels map[string]string
-	if err := json.Unmarshal([]byte(nnunetModel.LabelNames), &labels); err != nil {
-		panic(err)
-	}
-	return labels
+	return nnunetModel
 }
 
 func QueryNnunetModelReady(modelId int) int {
@@ -213,6 +209,7 @@ func QueryNnunetModelReady(modelId int) int {
 
 func QueryUserNnunetModelList(userId int) []NnunetModel {
 	var modelList []NnunetModel
-	DB.Where("ready = ?", 1).Find(&modelList)
+	// TODO: 根据用户id查找对应模型
+	DB.Where("ready = ? ", 1).Find(&modelList)
 	return modelList
 }

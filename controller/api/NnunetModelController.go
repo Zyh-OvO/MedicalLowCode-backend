@@ -72,6 +72,7 @@ func (u NnunetModelController) SetModelInfo(c *gin.Context) {
 	// 在本地创建一个文件,并把传入的zip文件数据拷入其中
 	util.CreateFolderIfNotExists(toTrain)
 	fileName = strings.ReplaceAll(fileName, "_", "-") // 将_替换为-，以免nnunet不支持
+	//fileFolderInResultDir = TODO: 明天我和这个接口会死一个
 	fileName = fmt.Sprintf("Task%02d_%s", nnUnetModel.Id, fileName)
 	out, err := os.Create(toTrain + fileName)
 	if err != nil {
@@ -187,11 +188,15 @@ func (u NnunetModelController) GetModelInfoInference(c *gin.Context) {
 	fmt.Println(token)
 	historyFileList := model.QueryUserInferenceFileList(token.UserId)
 	modelId, _ := strconv.Atoi(c.Param("modelId"))
-	labelNames := model.QueryNnunetModelLabels(modelId)
-	fmt.Println(historyFileList)
-	fmt.Println(labelNames)
+	nnunetModel := model.QueryNnunetModel(modelId)
+	var labels map[string]string
+	if err := json.Unmarshal([]byte(nnunetModel.LabelNames), &labels); err != nil {
+		panic(err)
+	}
+	modelName := nnunetModel.Name
+	modelDescription := nnunetModel.Description
 
-	c.JSON(http.StatusOK, gin.H{"history_file_list": historyFileList, "label_names": labelNames})
+	c.JSON(http.StatusOK, gin.H{"history_file_list": historyFileList, "label_names": labels, "model_name": modelName, "description": modelDescription})
 
 }
 
@@ -234,5 +239,6 @@ func TrainAllFold(modelId int) {
 	}
 	// 输出命令执行结果
 	fmt.Println("命令输出:", string(output))
+	//go WatchTrainingProgress(modelId) TODO: 明天我和这个接口会死一个
 	model.SetNnunetModelReady(modelId, 1)
 }
