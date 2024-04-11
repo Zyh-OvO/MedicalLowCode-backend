@@ -83,6 +83,7 @@ func ApiRouterInit(router *gin.Engine) {
 func dataprocessRouterInit(router *gin.RouterGroup) {
 	dataprocessRouter := router.Group("/dataprocess")
 	dataprocessRouter.POST("/chiSquareTest", api.DataprocessController{}.ChisquarHandler)
+	dataprocessRouter.POST("/kMeans", api.DataprocessController{}.K_means_func)
 }
 
 func websocketRouterInit(router *gin.RouterGroup) {
