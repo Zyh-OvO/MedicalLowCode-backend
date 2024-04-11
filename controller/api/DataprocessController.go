@@ -128,7 +128,7 @@ func (u DataprocessController) K_means_func(c *gin.Context) {
 				//计算第j个点对于第k个聚点的距离
 				this_min = 0
 				for l := 0; l < len(kMeansData.Data); l++ { // 对于第l维，也就是第k列
-					this_min += (kMeansData.Data[l][j] - points_location[k][j]) * (kMeansData.Data[l][j] - points_location[k][j])
+					this_min += (kMeansData.Data[l][j] - points_location[k][l]) * (kMeansData.Data[l][j] - points_location[k][l])
 				}
 				if this_min < dis_min {
 					dis_min = this_min
