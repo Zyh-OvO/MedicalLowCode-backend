@@ -110,9 +110,9 @@ func (u DataprocessController) K_means_func(c *gin.Context) {
 
 	fmt.Println(33)
 
-	for i := 0; i < kMeansData.K; i++ {
+	for i := 0; i < kMeansData.ItorTimes; i++ {
 		var points_location_temp [][]float64
-		points_location_temp = make([][]float64, len(kMeansData.Data[0]))
+		points_location_temp = make([][]float64, kMeansData.K)
 		for i := 0; i < len(points_location); i++ {
 			points_location_temp[i] = make([]float64, len(kMeansData.Data))
 		}
