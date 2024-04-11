@@ -18,6 +18,14 @@ import (
 type NnunetModelController struct {
 }
 
+type NnunetModelListElement struct {
+	Id          int    `json:"id"`
+	UserId      int    `json:"user_id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Cover       string `json:"cover"`
+}
+
 const toTrain = "data/to_train/" // 存储模型训练原数据
 
 func (u NnunetModelController) SetModelInfo(c *gin.Context) {
@@ -156,18 +164,20 @@ func (u NnunetModelController) GetModelList(c *gin.Context) {
 	fmt.Println(token)
 	modelList := model.QueryUserNnunetModelList(token.UserId)
 
-	var jsonDataList [][]byte
+	var jsonDataList []interface{}
 
 	for i := 0; i < len(modelList); i++ {
-		jsonData, err := json.Marshal(modelList[i])
-		if err != nil {
-			fmt.Println("Error marshalling JSON:", err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Error marshalling JSON"})
-		}
-		jsonDataList = append(jsonDataList, jsonData)
+		var element NnunetModelListElement
+		element.Name = modelList[i].Name
+		element.Id = modelList[i].Id
+		element.UserId = modelList[i].UserId
+		element.Description = modelList[i].Description
+		element.Cover = modelList[i].Cover
+		jsonDataList = append(jsonDataList, element)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"modelList": jsonDataList})
+
 }
 
 func TrainNnunetModel(destDir string, modelId int) {
