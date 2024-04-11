@@ -93,7 +93,7 @@ func (u DataprocessController) k_means_func(c *gin.Context) {
 	types = make([]int, len(k_means_data.Data[0]))
 
 	var points_location [][]float64
-	points_location = make([][]float64, len(k_means_data.Data[0]))
+	points_location = make([][]float64, k_means_data.K)
 
 	for i := 0; i < len(points_location); i++ {
 		points_location[i] = make([]float64, len(k_means_data.Data))
