@@ -23,6 +23,8 @@ import (
 
 const Device = "cpu"
 const Env = "/opt/miniconda3/etc/profile.d/conda.sh"
+const TrainPlanFolder = "nnUNetTrainer__nnUNetPlans__3d_fullres"
+const TrainFoldFolder = "fold_all"
 
 var tokenKey = []byte("lowcode")
 
@@ -284,6 +286,26 @@ func Unzip(src, dest string) error {
 	}
 
 	return nil
+}
+
+func FindFileNumFolder(folder string) string {
+	destFolder := folder
+	err := filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() && strings.Compare(path, folder) != 0 {
+			if !strings.HasSuffix(path, "imagesTr") && !strings.HasSuffix(path, "imagesTs") && !strings.HasSuffix(path, "labelsTr") && !strings.HasSuffix(path, "labelsTs") {
+				destFolder = path + "/"
+				fmt.Println("data in folder:", destFolder)
+				return filepath.SkipDir
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		fmt.Println("遍历文件夹时发生错误：", err)
+	}
+
+	return destFolder
 }
 
 func FindFileNumInFolder(folder string, extension string) int {

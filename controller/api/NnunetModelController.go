@@ -3,6 +3,7 @@ package api
 import (
 	"MedicalLowCode-backend/model"
 	"MedicalLowCode-backend/util"
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -25,6 +27,7 @@ type NnunetModelListElement struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Cover       string `json:"cover"`
+	Ready       int    `json:"ready"`
 }
 
 const toTrain = "data/to_train/" // 存储模型训练原数据
@@ -72,7 +75,7 @@ func (u NnunetModelController) SetModelInfo(c *gin.Context) {
 	// 在本地创建一个文件,并把传入的zip文件数据拷入其中
 	util.CreateFolderIfNotExists(toTrain)
 	fileName = strings.ReplaceAll(fileName, "_", "-") // 将_替换为-，以免nnunet不支持
-	//fileFolderInResultDir = TODO: 明天我和这个接口会死一个
+	fileNameInSystemWithNoExtension, _ := strings.CutSuffix(fileName, ".zip")
 	fileName = fmt.Sprintf("Task%02d_%s", nnUnetModel.Id, fileName)
 	out, err := os.Create(toTrain + fileName)
 	if err != nil {
@@ -111,6 +114,14 @@ func (u NnunetModelController) SetModelInfo(c *gin.Context) {
 
 	fmt.Println("ZIP 文件已成功解压到目录:", destDir)
 
+	newDestDir := util.FindFileNumFolder(destDir)
+	if newDestDir != destDir {
+		fileNameInSystemWithNoExtension, _ = strings.CutPrefix(newDestDir, destDir)
+		fileNameInSystemWithNoExtension, _ = strings.CutSuffix(fileNameInSystemWithNoExtension, "/")
+		list := strings.Split(fileNameInSystemWithNoExtension, "_")
+		fileNameInSystemWithNoExtension = list[len(list)]
+	}
+
 	trNums := util.FindFileNumInFolder(destDir+"imagesTr", modelInfo.FileEnding)
 	tsNums := util.FindFileNumInFolder(destDir+"imagesTs", modelInfo.FileEnding)
 
@@ -122,7 +133,7 @@ func (u NnunetModelController) SetModelInfo(c *gin.Context) {
 	modelInfo.NumTraining = trNums
 	modelInfo.NumTest = tsNums
 
-	nnUnetModel = model.UpdateNnunetModel(modelInfo, nnUnetModel.Id, 0)
+	nnUnetModel = model.UpdateNnunetModel(modelInfo, nnUnetModel.Id, 0, fileNameInSystemWithNoExtension)
 
 	// 调用 os.Stat 获取文件信息
 	datasetJson := destDir + "dataset.json"
@@ -156,7 +167,7 @@ func (u NnunetModelController) SetModelInfo(c *gin.Context) {
 
 	go TrainNnunetModel(destDir, nnUnetModel.Id)
 
-	c.JSON(http.StatusOK, gin.H{"message": "数据已收到", "modelId": nnUnetModel.Id})
+	c.JSON(http.StatusOK, gin.H{"message": "数据已收到", "modelId": nnUnetModel.Id, "model": nnUnetModel})
 
 }
 
@@ -164,7 +175,7 @@ func (u NnunetModelController) GetModelList(c *gin.Context) {
 	fmt.Println("请求的URL是：", c.Request.URL.String())
 	token := c.MustGet("token").(*util.Token)
 	fmt.Println(token)
-	modelList := model.QueryUserNnunetModelList(token.UserId)
+	modelList := model.QueryUserNnunetModelList(token.UserId) // 自己的模型或公开的模型 // 目前应该是默认所有模型都公开
 
 	var jsonDataList []interface{}
 
@@ -175,6 +186,7 @@ func (u NnunetModelController) GetModelList(c *gin.Context) {
 		element.UserId = modelList[i].UserId
 		element.Description = modelList[i].Description
 		element.Cover = modelList[i].Cover
+		element.Ready = modelList[i].Ready
 		jsonDataList = append(jsonDataList, element)
 	}
 
@@ -189,6 +201,10 @@ func (u NnunetModelController) GetModelInfoInference(c *gin.Context) {
 	historyFileList := model.QueryUserInferenceFileList(token.UserId)
 	modelId, _ := strconv.Atoi(c.Param("modelId"))
 	nnunetModel := model.QueryNnunetModel(modelId)
+	if nnunetModel.Ready != 1 { //模型还在inference TODO: 模型不存在
+		c.JSON(http.StatusOK, gin.H{"status": "inferencing"})
+		return
+	}
 	var labels map[string]string
 	if err := json.Unmarshal([]byte(nnunetModel.LabelNames), &labels); err != nil {
 		panic(err)
@@ -196,7 +212,22 @@ func (u NnunetModelController) GetModelInfoInference(c *gin.Context) {
 	modelName := nnunetModel.Name
 	modelDescription := nnunetModel.Description
 
-	c.JSON(http.StatusOK, gin.H{"history_file_list": historyFileList, "label_names": labels, "model_name": modelName, "description": modelDescription})
+	// dice
+	nnUNetResultsDir := os.Getenv("nnUNet_results")
+	fmt.Println("env:\n" + nnUNetResultsDir)
+	datasetFolder := fmt.Sprintf("Dataset%03d_%s", nnunetModel.Id, nnunetModel.FileNameInSystemWithNoExtension)
+	resultDir := nnUNetResultsDir + "/" + datasetFolder + "/" + util.TrainPlanFolder + "/"
+	resultFoldDir := resultDir + util.TrainFoldFolder + "/"
+	meanValidationDice := GetMeanValidationDice(resultFoldDir)
+	datasetInfo := GetDatasetInfoJson(resultDir)
+
+	fmt.Println(resultDir)
+	fmt.Println(resultFoldDir)
+	fmt.Println(meanValidationDice)
+	fmt.Println(datasetInfo)
+	// 返回json文件
+
+	c.JSON(http.StatusOK, gin.H{"history_file_list": historyFileList, "label_names": labels, "model_name": modelName, "description": modelDescription, "status": "finished", "mean_validation_dice": meanValidationDice, "dataset_info": datasetInfo})
 
 }
 
@@ -232,6 +263,7 @@ func TrainAllFold(modelId int) {
 	cmd := exec.Command("bash", "-c", fmt.Sprintf("source %s && conda activate nnUNet && nnUNetv2_train %d 3d_fullres all --npz --c -device %s", env, modelId, device))
 	command := fmt.Sprintf("source %s && conda activate nnUNet && nnUNetv2_train %d 3d_fullres all --npz --c -device %s", env, modelId, device)
 	fmt.Println(command)
+	//go WatchTrainingProgress(modelId) TODO:实时监测训练进度
 	output, err := cmd.Output()
 	if err != nil {
 		fmt.Println("命令执行失败:", err)
@@ -239,6 +271,79 @@ func TrainAllFold(modelId int) {
 	}
 	// 输出命令执行结果
 	fmt.Println("命令输出:", string(output))
-	//go WatchTrainingProgress(modelId) TODO: 明天我和这个接口会死一个
 	model.SetNnunetModelReady(modelId, 1)
 }
+
+func GetMeanValidationDice(folder string) float64 {
+	filePath := SearchFileInFolder(folder, "training_log")
+	file, err := os.Open(filePath)
+	if err != nil {
+		fmt.Println("无法打开文件：", file.Name())
+		panic(err)
+	}
+	defer file.Close()
+
+	// 创建一个 Scanner 来扫描文件内容
+	scanner := bufio.NewScanner(file)
+	iconStr := "Mean Validation Dice:  "
+	var lastRow string
+
+	// 逐行读取文件内容
+	for scanner.Scan() {
+		line := scanner.Text()
+		// 查找子串的索引
+		index := strings.Index(line, iconStr)
+
+		// 如果找到子串
+		if index != -1 {
+			// 输出子串后的内容
+			lastRow = fmt.Sprintf(line[index+len(iconStr):])
+		}
+	}
+
+	// 检查扫描过程中是否出现错误
+	if err := scanner.Err(); err != nil {
+		fmt.Println("扫描文件时出错：", err)
+	}
+	lastRow = strings.TrimSpace(lastRow)
+	dice, _ := strconv.ParseFloat(lastRow, 64)
+	return dice
+}
+
+func GetDatasetInfoJson(folder string) string {
+	filePath := SearchFileInFolder(folder, "plans.json")
+	jsonFile, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		fmt.Println("命令执行失败:", err)
+	}
+
+	// 将 JSON 文件内容转换为字符串
+	jsonString := string(jsonFile)
+	return jsonString
+}
+
+func SearchFileInFolder(absoluteFolder string, prefix string) string {
+	var filePath string
+	// 遍历指定文件夹下的所有文件和文件夹
+	err := filepath.Walk(absoluteFolder, func(path string, info os.FileInfo, err error) error {
+		// 忽略目录
+		if info.IsDir() {
+			return nil
+		}
+		// 检查文件名是否以 "training_log" 开头
+		if strings.HasPrefix(filepath.Base(path), prefix) {
+			// 如果是，则打印文件路径
+			fmt.Println("找到匹配的文件：", path)
+			filePath = path
+		}
+		return nil
+	})
+
+	if err != nil {
+		fmt.Println("搜索文件时出错：", err)
+	}
+	return filePath
+}
+
+//func WatchTrainingProgress(modelId int) {
+//}
