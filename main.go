@@ -11,7 +11,7 @@ import (
 
 func main() {
 	r := gin.Default()
-
+	gin.DisableConsoleColor()
 	// 静态文件服务
 	//r.Static("/static", "./static")
 

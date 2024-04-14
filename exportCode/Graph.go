@@ -4,7 +4,6 @@ import (
 	"MedicalLowCode-backend/util"
 	"encoding/json"
 	"gopkg.in/gyuho/goraph.v2"
-	"reflect"
 	"strconv"
 	"strings"
 )
@@ -76,15 +75,15 @@ func (node *CNode) GenerateDatasetCode() string {
 		code += "    def __getitem__(self, idx):\n"
 		code += "        data_item = torch.from_numpy(self.data.iloc[idx].values.astype(float))\n"
 		code += "        label_item = torch.from_numpy(self.label.iloc[idx].values.astype(float))\n"
-		code += "        return data_item, label_item\n"
+		code += "        return data_item, label_item\n\n"
 		code += "train_dataset = CustomDataset('" + dataset.TrainDataFilePath + "', '" + dataset.TrainLabelFilePath + "')\n"
 		code += "train_loader = DataLoader(train_dataset, batch_size=" + strconv.Itoa(dataset.BatchSize) + ", shuffle=" + strings.Title(strconv.FormatBool(dataset.Shuffle)) + ")\n"
 		code += "test_dataset = CustomDataset('" + dataset.TestDataFilePath + "', '" + dataset.TestLabelFilePath + "')\n"
-		code += "test_loader = DataLoader(test_dataset, batch_size=" + strconv.Itoa(dataset.BatchSize) + ", shuffle=" + strings.Title(strconv.FormatBool(dataset.Shuffle)) + ")\n"
+		code += "test_loader = DataLoader(test_dataset, batch_size=" + strconv.Itoa(dataset.BatchSize) + ", shuffle=" + strings.Title(strconv.FormatBool(dataset.Shuffle)) + ")\n\n"
 	case *ReasoningDataset:
 		code += "reasoning_data_file = '" + node.Layer.(*ReasoningDataset).ReasoningDataFilePath + "'\n"
 		code += "reasoning_data = pd.read_csv(reasoning_data_file)\n"
-		code += "reasoning_data = torch.from_numpy(reasoning_data.values.astype(float))\n"
+		code += "reasoning_data = torch.from_numpy(reasoning_data.values.astype(float))\n\n"
 	}
 	return code
 }
@@ -92,9 +91,9 @@ func (node *CNode) GenerateDatasetCode() string {
 func (node *CNode) GenerateNetCode() (string, string) {
 	// 两部分：1. 生成layer 2. 生成forward
 	var layerCode, forwardCode string
-	layerCode += "self." + node.LayerName + " = nn." + reflect.TypeOf(node.Layer).Name() + "("
+	layerCode += "self." + node.LayerName + " = nn." + node.Type + "("
 	layerCode += Layer2Code(node.Layer)
-	layerCode += ")\n"
+	layerCode += ")"
 	forwardCode = node.OutputName + " = self." + node.LayerName + "("
 	for _, predecessor := range node.Predecessors {
 		forwardCode += predecessor.OutputName + ", "
@@ -112,13 +111,13 @@ func (node *CNode) GenerateTrainCode() string {
 	nodeType := node.Type
 	switch {
 	case util.SliceContains(OptimizerKinds, nodeType):
-		code += "optimizer = optim." + reflect.TypeOf(node.Layer).Name() + "(model.parameters(), "
+		code += "optimizer = optim." + node.Type + "(model.parameters(), "
 		code += Layer2Code(node.Layer)
-		code += ")\n"
+		code += ")\n\n"
 	case util.SliceContains(LossFunctionKinds, nodeType):
-		code += "criterion = nn." + reflect.TypeOf(node.Layer).Name() + "("
+		code += "criterion = nn." + node.Type + "("
 		code += Layer2Code(node.Layer)
-		code += ")\n"
+		code += ")\n\n"
 	case nodeType == "TrainLayer":
 		trainLayer := node.Layer.(*TrainLayer)
 		code += "num_epochs = " + strconv.Itoa(trainLayer.NumEpochs) + "\n"
@@ -139,9 +138,9 @@ func (node *CNode) GenerateTrainCode() string {
 		code += "    print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {average_loss}')\n"
 		code += "    if average_loss < best_loss:\n"
 		code += "        best_loss = average_loss\n"
-		code += "        best_model_params = model.state_dict()\n"
+		code += "        best_model_params = model.state_dict()\n\n"
 		code += "if best_model_params is not None:\n"
-		code += "    torch.save(best_model_params, save_params_file_path)\n"
+		code += "    torch.save(best_model_params, save_params_file_path)\n\n"
 		code += "model.load_state_dict(best_model_params)\n"
 		code += "model.eval()\n"
 		code += "correct = 0\n"
@@ -202,11 +201,24 @@ func RecoverGraph(canvasContent string) (datasetGraph, netGraph, trainGraph gora
 		}
 	}
 	for _, edge := range canvas.Edges {
-		//todo: 维护前驱节点
 		//尝试在三个图中插入边
-		datasetGraph.AddEdge(goraph.StringID(edge.SrcId), goraph.StringID(edge.TgtId), 1)
-		netGraph.AddEdge(goraph.StringID(edge.SrcId), goraph.StringID(edge.TgtId), 1)
-		trainGraph.AddEdge(goraph.StringID(edge.SrcId), goraph.StringID(edge.TgtId), 1)
+		err1 := datasetGraph.AddEdge(goraph.StringID(edge.SrcId), goraph.StringID(edge.TgtId), 1)
+		err2 := netGraph.AddEdge(goraph.StringID(edge.SrcId), goraph.StringID(edge.TgtId), 1)
+		err3 := trainGraph.AddEdge(goraph.StringID(edge.SrcId), goraph.StringID(edge.TgtId), 1)
+		if err1 == nil || err2 == nil || err3 == nil {
+			srcNode := getNodeById(edge.SrcId, canvas.Nodes)
+			tgtNode := getNodeById(edge.TgtId, canvas.Nodes)
+			tgtNode.Predecessors = append(tgtNode.Predecessors, srcNode)
+		}
 	}
 	return
+}
+
+func getNodeById(nodeId string, nodes []CNode) *CNode {
+	for key, node := range nodes {
+		if node.Id == nodeId {
+			return &nodes[key]
+		}
+	}
+	return nil
 }

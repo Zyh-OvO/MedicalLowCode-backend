@@ -32,6 +32,7 @@ func ExportCode(canvasContent string) string {
 	importCode += "from torch.utils.data import Dataset, DataLoader\n"
 	importCode += "import numpy as np\n"
 	importCode += "import pandas as pd\n"
+	importCode += "\n"
 	return importCode + dataCode + netCode + trainCode
 }
 
@@ -80,8 +81,8 @@ func genNetCode(graph goraph.Graph) (string, error) {
 	for _, forwardCode := range forwardCodes {
 		code += "        " + forwardCode + "\n"
 	}
-	code += "        return " + topologicalNodes[len(topologicalNodes)-1].OutputName + "\n"
-	code += "model = Net()\n"
+	code += "        return " + topologicalNodes[len(topologicalNodes)-1].OutputName + "\n\n"
+	code += "model = Net()\n\n"
 	return code, nil
 }
 
