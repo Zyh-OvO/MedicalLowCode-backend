@@ -38,6 +38,9 @@ func (m ModuleManageController) GetPersonalModules(c *gin.Context) {
 			"updatedAt":     module.UpdatedAt.Unix(),
 		})
 	}
+	if moduleList == nil {
+		moduleList = []gin.H{}
+	}
 	response := gin.H{
 		"modules": moduleList,
 	}

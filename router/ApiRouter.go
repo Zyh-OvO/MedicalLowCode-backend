@@ -132,6 +132,7 @@ func projectDevelopRouterInit(router *gin.RouterGroup) {
 	projectDevelopRouter.Use(CheckToken)
 	projectDevelopRouter.POST("/exportCode", api.ProjectDevelopController{}.ExportCode)
 	projectDevelopRouter.POST("/submitTrainingTask", api.ProjectDevelopController{}.SubmitTask)
+	projectDevelopRouter.POST("/getProjectTaskList", api.ProjectDevelopController{}.GetProjectTaskList)
 	projectDevelopRouter.POST("/getTaskList", api.ProjectDevelopController{}.GetTaskList)
 	projectDevelopRouter.POST("/stopTask", api.ProjectDevelopController{}.StopTask)
 	//projectDevelopRouter.POST("/submitReasoningTask", api.ProjectDevelopController{}.SubmitReasoningTask)

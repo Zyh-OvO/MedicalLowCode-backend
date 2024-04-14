@@ -258,9 +258,18 @@ func QueryTask(userId int, taskId int) *Task {
 	return &task
 }
 
-func QueryTaskList(userId int, projectId int) []Task {
+func QueryProjectTaskList(userId int, projectId int) []Task {
 	var tasks []Task
 	result := DB.Where("user_id = ? and project_id = ?", userId, projectId).Find(&tasks)
+	if err := result.Error; err != nil {
+		panic(err)
+	}
+	return tasks
+}
+
+func QueryTaskListByUserId(userId int) []Task {
+	var tasks []Task
+	result := DB.Where("user_id = ?", userId).Find(&tasks)
 	if err := result.Error; err != nil {
 		panic(err)
 	}

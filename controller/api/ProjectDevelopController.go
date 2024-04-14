@@ -89,7 +89,7 @@ func RunTask(userId int, taskId int, code string) {
 	model.SetTaskStatus(userId, taskId, true)
 }
 
-func (p ProjectDevelopController) GetTaskList(c *gin.Context) {
+func (p ProjectDevelopController) GetProjectTaskList(c *gin.Context) {
 	token := c.MustGet("token").(*util.Token)
 	var json getTaskListJson
 	if err := c.ShouldBindJSON(&json); err != nil {
@@ -97,7 +97,7 @@ func (p ProjectDevelopController) GetTaskList(c *gin.Context) {
 		return
 	}
 	projectId, _ := strconv.Atoi(json.ProjectId)
-	tasks := model.QueryTaskList(token.UserId, projectId)
+	tasks := model.QueryProjectTaskList(token.UserId, projectId)
 	var taskList []gin.H
 	for _, task := range tasks {
 		var endTime int64
@@ -114,6 +114,37 @@ func (p ProjectDevelopController) GetTaskList(c *gin.Context) {
 			"isSuccessful": task.IsSuccessful,
 			"logFilePath":  task.LogFilePath,
 		})
+	}
+	if taskList == nil {
+		taskList = []gin.H{}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"taskList": taskList,
+	})
+}
+
+func (p ProjectDevelopController) GetTaskList(c *gin.Context) {
+	token := c.MustGet("token").(*util.Token)
+	tasks := model.QueryTaskListByUserId(token.UserId)
+	var taskList []gin.H
+	for _, task := range tasks {
+		var endTime int64
+		if task.EndTime == nil {
+			endTime = -1
+		} else {
+			endTime = task.EndTime.Unix()
+		}
+		taskList = append(taskList, gin.H{
+			"taskId":       strconv.Itoa(task.TaskId),
+			"taskName":     task.TaskName,
+			"submitTime":   task.SubmitTime.Unix(),
+			"endTime":      endTime,
+			"isSuccessful": task.IsSuccessful,
+			"logFilePath":  task.LogFilePath,
+		})
+	}
+	if taskList == nil {
+		taskList = []gin.H{}
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"taskList": taskList,

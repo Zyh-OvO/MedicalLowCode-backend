@@ -130,6 +130,9 @@ func (p ProjectManageController) GetProjectList(c *gin.Context) {
 			"updatedAt":          project.UpdatedAt.Unix(),
 		})
 	}
+	if projectInfoList == nil {
+		projectInfoList = []gin.H{}
+	}
 	response := gin.H{
 		"projectList": projectInfoList,
 	}
